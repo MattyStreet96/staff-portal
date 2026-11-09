@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TeamKarting Staff Portal</title>
+<meta name="description" content="Staff portal for the DRIVEN Motorsport Group: rota, checks, documents and training.">
+<meta name="theme-color" content="#0b0b0b">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Staff Portal">
+<style>
+  html,body{margin:0;height:100%;background:#fff;overflow:hidden}
+  #app{position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:#fff}
+  #splash{position:fixed;inset:0;display:grid;place-items:center;background:#fff;transition:opacity .25s;z-index:2}
+  #splash.gone{opacity:0;pointer-events:none}
+  #splash .in{display:grid;gap:18px;justify-items:center;font:600 13px/1.4 Arial,Helvetica,sans-serif;color:#5e5e5c;letter-spacing:1.6px;text-transform:uppercase}
+  #splash img{width:min(240px,60vw);height:auto}
+  #splash i{display:block;width:120px;height:3px;background:#e4e4e2;overflow:hidden;position:relative}
+  #splash i::after{content:"";position:absolute;inset:0;width:40%;background:#d6141b;animation:run 1s ease-in-out infinite alternate}
+  @keyframes run{to{transform:translateX(150%)}}
+  #slow{display:none;font:14px/1.5 Arial,Helvetica,sans-serif;color:#0b0b0b;text-transform:none;letter-spacing:0;text-align:center}
+  #slow a{color:#d6141b}
+</style>
+</head>
+<body>
+<div id="splash"><div class="in"><img src="logo.png" alt="TeamKarting"><i></i><span>Staff portal</span><div id="slow">Taking a while? <a id="direct" href="#">Open the portal directly</a></div></div></div>
+<iframe id="app" title="TeamKarting Staff Portal" allow="camera; clipboard-read; clipboard-write; screen-wake-lock; fullscreen"></iframe>
+<noscript><p style="font:16px Arial;padding:20px">Turn on JavaScript, or <a href="https://script.google.com/macros/s/AKfycbzJmkN9f4TI2gCITW-jBgD5p3x_oGcAjFDdkG07UeerYbv-n4c-Ag8p6jxCqLkM9J1w/exec">open the portal directly</a>.</p></noscript>
+<script>
+  // The portal itself runs on Google Apps Script. This page keeps the branded address and passes
+  // links such as ?clock=, ?station= and ?invite= straight through to it.
+  var APP = 'https://script.google.com/macros/s/AKfycbzJmkN9f4TI2gCITW-jBgD5p3x_oGcAjFDdkG07UeerYbv-n4c-Ag8p6jxCqLkM9J1w/exec';
+  var src = APP + (location.search || '');
+  var f = document.getElementById('app'), s = document.getElementById('splash');
+  document.getElementById('direct').href = src;
+  f.addEventListener('load', function(){ setTimeout(function(){ s.classList.add('gone'); }, 150); });
+  setTimeout(function(){ document.getElementById('slow').style.display = 'block'; }, 9000);
+  f.src = src;
+  if ('serviceWorker' in navigator) { /* no offline cache: the portal always needs live data */ }
+</script>
+</body>
+</html>
