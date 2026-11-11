@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TeamKarting Staff Portal (classic)</title>
+<meta name="description" content="Staff portal for the DRIVEN Motorsport Group: rota, checks, documents and training.">
+<meta name="theme-color" content="#0b0b0b">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Staff Portal">
+<style>
+  html,body{margin:0;height:100%;background:#fff;overflow:hidden}
+  #app{position:fixed;inset:0;width:1px;min-width:100%;height:100%;border:0;display:block;background:#fff}
+  #splash{position:fixed;inset:0;display:grid;place-items:center;background:#fff;transition:opacity .25s;z-index:2}
+  #splash.gone{opacity:0;pointer-events:none}
+  #splash .in{display:grid;gap:18px;justify-items:center;font:600 13px/1.4 Arial,Helvetica,sans-serif;color:#5e5e5c;letter-spacing:1.6px;text-transform:uppercase}
+  #splash img{width:min(240px,60vw);height:auto}
+  #splash i{display:block;width:120px;height:3px;background:#e4e4e2;overflow:hidden;position:relative}
+  #splash i::after{content:"";position:absolute;inset:0;width:40%;background:#d6141b;animation:run 1s ease-in-out infinite alternate}
+  @keyframes run{to{transform:translateX(150%)}}
+  #slow{display:none;font:14px/1.5 Arial,Helvetica,sans-serif;color:#0b0b0b;text-transform:none;letter-spacing:0;text-align:center}
+  #slow a{color:#d6141b}
+  #fix{display:none;position:fixed;z-index:3;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));background:#0b0b0b;color:#fff;border:0;border-bottom:3px solid #d6141b;border-radius:999px;padding:10px 14px;font:600 13px Arial,Helvetica,sans-serif;box-shadow:0 4px 16px #0004;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="splash"><div class="in"><img src="logo.png" alt="TeamKarting"><i></i><span>Staff portal</span><div id="slow">Taking a while? <a id="direct" href="#">Open the portal directly</a></div></div></div>
+<button id="fix" type="button"></button>
+<iframe id="app" title="TeamKarting Staff Portal" allow="camera; clipboard-read; clipboard-write; screen-wake-lock; fullscreen"></iframe>
+<noscript><p style="font:16px Arial;padding:20px">Turn on JavaScript, or <a href="https://script.google.com/macros/s/AKfycbzJmkN9f4TI2gCITW-jBgD5p3x_oGcAjFDdkG07UeerYbv-n4c-Ag8p6jxCqLkM9J1w/exec">open the portal directly</a>.</p></noscript>
+<script>
+  // The portal itself runs on Google Apps Script. This page keeps the branded address and passes
+  // links such as ?clock=, ?station= and ?invite= straight through to it.
+  var ID = 'AKfycbzJmkN9f4TI2gCITW-jBgD5p3x_oGcAjFDdkG07UeerYbv-n4c-Ag8p6jxCqLkM9J1w';
+  var PLAIN = 'https://script.google.com/macros/s/' + ID + '/exec';
+  var WORK = 'https://script.google.com/a/macros/drivenmotorsportgroup.co.uk/s/' + ID + '/exec';
+  // People signed in to more than one Google account can get a Google "unable to open the file" error.
+  // The work account address fixes it for them, so offer a one tap switch and remember it on this device.
+  var mode = ''; try { mode = localStorage.getItem('tk_mode') || ''; } catch (e) {}
+  var APP = mode === 'work' ? WORK : PLAIN;
+  var src = APP + (location.search || '');
+  var f = document.getElementById('app'), s = document.getElementById('splash');
+  document.getElementById('direct').href = src;
+  f.addEventListener('load', function(){ setTimeout(function(){ s.classList.add('gone'); }, 150); });
+  setTimeout(function(){ document.getElementById('slow').style.display = 'block'; }, 9000);
+  f.src = src;
+  var fix = document.getElementById('fix');
+  fix.textContent = mode === 'work' ? 'Still not loading? Try the standard address' : 'Seeing a Google error? Tap here';
+  fix.onclick = function () { try { localStorage.setItem('tk_mode', mode === 'work' ? '' : 'work'); } catch (e) {} location.reload(); };
+  setTimeout(function () { fix.style.display = 'block'; }, 2500);
+  setTimeout(function () { fix.style.display = 'none'; }, 20000);
+  if ('serviceWorker' in navigator) { /* no offline cache: the portal always needs live data */ }
+</script>
+</body>
+</html>
