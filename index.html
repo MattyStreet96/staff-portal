@@ -212,7 +212,12 @@ button.next{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}
 .next .s{color:#f5f3eeaa}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
 .toolbar .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-.rota-wrap{overflow:auto;max-height:calc(100vh - 160px)}
+.rota-wrap{overflow:auto;max-height:calc(100vh - 160px);overscroll-behavior:contain}
+.rboard{grid-template-columns:repeat(5,minmax(112px,1fr));overflow-x:auto;margin-bottom:10px;scrollbar-width:none}.rboard::-webkit-scrollbar{display:none}
+.rboard div{padding:10px 14px}.rboard b{font-size:24px}.rboard span{font-size:10.5px;white-space:nowrap}
+.rhint{font-size:12.5px}
+main.fit{padding-bottom:10px!important}
+@media (max-width:760px){.rhint{display:none}.rboard b{font-size:20px}.rboard div{padding:8px 12px}}
 .rota{border-collapse:separate;border-spacing:0;min-width:1040px;font-size:13px;width:100%}
 .rota thead th{position:sticky;top:0;z-index:3;background:var(--surface);text-align:center;padding:10px 6px;border-bottom:1px solid var(--line);text-transform:none;letter-spacing:0;color:var(--fg)}
 .rota thead th span{display:block;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
@@ -802,6 +807,17 @@ return '<div class="head"><div><div class="eyebrow">'+esc(d.company)+' rota</div
 '<span class="seg"><button id="rprev" aria-label="Previous">'+ICON.left+'</button><button id="rnow">'+(mode==='week'?'This week':'This month')+'</button><button id="rnext" aria-label="Next">'+ICON.right+'</button></span>'+
 '<button class="btn" id="rreq">Requests'+(d.pending?' <span class="badge">'+d.pending+'</span>':'')+'</button><button class="btn" id="rts">Timesheets</button></div></div>';
 }
+function fitRota(){
+var w=document.querySelector('.rota-wrap'), m=document.getElementById('main'); if(!w) return;
+if(m){ m.classList.add('fit'); if(!fitRota.watch){ fitRota.watch=1; new MutationObserver(function(){ if(!document.querySelector('.rota-wrap')) m.classList.remove('fit'); }).observe(m,{childList:true}); } }
+var bt=document.querySelector('.btabs'), bh=bt&&getComputedStyle(bt).display!=='none'&&getComputedStyle(bt).position==='fixed'?bt.offsetHeight:0;
+var top=w.getBoundingClientRect().top+(window.scrollY||0);
+var h=Math.floor(window.innerHeight-top-bh-14);
+w.style.maxHeight='none'; w.style.height=Math.max(240,h)+'px';
+var extra=document.documentElement.scrollHeight-window.innerHeight;
+if(extra>0) w.style.height=Math.max(240,h-extra)+'px';
+if(!fitRota.on){ fitRota.on=1; window.addEventListener('resize',function(){ if(S.view==='rota') fitRota(); }); }
+}
 function bindRotaTop(mode){
 var R=S.rota;
 if ($('#rcomp')) $('#rcomp').onchange=function(){ R.company=this.value; VIEWS.rota(); };
@@ -829,8 +845,8 @@ list.map(function(s){ return '<button class="shift'+(s.status==='Draft'?' draft'
 return '<td class="'+cls+'"><div class="rc-in">'+inner+'<button class="add" data-add="'+day+'" data-who="'+r.id+'" aria-label="Add shift">+</button></div></td>';
 };
 m.innerHTML = rotaTop(d,'week')+
-'<div class="board"><div class="hi"><b class="num">'+hrs(d.totals.hours)+'</b><span>Rota hours</span></div><div><b class="num">'+money(d.totals.cost)+'</b><span>Labour cost (hourly and day rate)</span></div><div><b class="num">'+d.totals.shifts+'</b><span>Shifts</span></div><div class="'+(d.totals.open?'warn':'')+'"><b class="num">'+d.totals.open+'</b><span>Open shifts</span></div><div class="'+(warnCount?'warn':'')+'"><b class="num">'+warnCount+'</b><span>Clashes to check</span></div></div>'+
-'<div class="toolbar">'+st+'<div class="acts"><button class="btn" id="rcopy">Copy last week</button><button class="btn pri" id="rpub">'+(d.status==='Published'?'Publish again':'Publish and email staff')+'</button></div></div>'+
+'<div class="board rboard"><div class="hi"><b class="num">'+hrs(d.totals.hours)+'</b><span>Rota hours</span></div><div><b class="num">'+money(d.totals.cost)+'</b><span>Labour cost</span></div><div><b class="num">'+d.totals.shifts+'</b><span>Shifts</span></div><div class="'+(d.totals.open?'warn':'')+'"><b class="num">'+d.totals.open+'</b><span>Open shifts</span></div><div class="'+(warnCount?'warn':'')+'"><b class="num">'+warnCount+'</b><span>Clashes to check</span></div></div>'+
+'<div class="toolbar">'+st+'<span class="hint rhint">Tap a space to add a shift. Dashed shifts are drafts.</span><div class="acts"><button class="btn" id="rcopy">Copy last week</button><button class="btn pri" id="rpub">'+(d.status==='Published'?'Publish again':'Publish and email staff')+'</button></div></div>'+
 '<div class="panel rota-wrap"><table class="rota"><thead><tr><th class="who-h">Team</th>'+d.days.map(function(day){ return '<th class="'+(day===today?'today':'')+'"><span>'+dayName(day)+'</span><b class="num">'+dayNum(day)+'</b></th>'; }).join('')+'</tr></thead><tbody>'+
 rows.map(function(r){
 var over = (r.contractedHours && r.hours>r.contractedHours) || r.hours>48;
@@ -838,9 +854,8 @@ return '<tr class="'+(r.open?'open-row':'')+'"><th class="who-c">'+(r.open?'<div
 '<div class="pp"><div class="av sm" style="background:'+roleCol(r.jobRole)+';color:#fff">'+initials(r.name)+'</div><div><b>'+esc(r.name)+'</b>'+(r.under18?' <span class="chip amb">U18</span>':'')+(r.status==='Invited'?' <span class="chip gold">Invited</span>':'')+
 '<div class="hint num">'+esc(r.jobRole)+' · <span class="'+(over?'over':'')+'" title="'+(r.hours>48?'Over 48 hours this week. Check they have signed a 48 hour opt out.':over?'Over contracted hours':'')+'">'+hrs(r.hours)+(r.contractedHours?' of '+r.contractedHours+'h':'')+'</span></div></div></div>')+'</th>'+
 d.days.map(function(day,i){ return cell(r,day,i); }).join('')+'</tr>';
-}).join('')+'</tbody></table></div>'+
-'<p class="hint" style="margin-top:10px">Tap a space to add a shift. Dashed shifts are drafts. Changes to a published week are emailed to the person straight away.</p>';
-bindRotaTop('week');
+}).join('')+'</tbody></table></div>';
+bindRotaTop('week'); fitRota();
 m.querySelectorAll('[data-add]').forEach(function(b){ b.onclick=function(){ shiftSheet({date:b.dataset.add, staffId:b.dataset.who}); }; });
 m.querySelectorAll('[data-shift]').forEach(function(b){ b.onclick=function(){ shiftSheet(d.shifts.filter(function(s){ return s.id===b.dataset.shift; })[0]); }; });
 $('#rcopy').onclick=function(){ var b=this; b.disabled=true; call('copyWeek',{weekStart:d.weekStart, company:d.company}).then(function(r){ toast('Copied last week as a draft'); drawWeek(r); }).catch(function(e){
@@ -899,7 +914,7 @@ cells+='<button class="md'+(inM?'':' out')+(day===today?' today':'')+'" data-day
 (hol.length&&inM?'<span class="hl">'+hol.map(function(h){ return esc(h.name.split(' ')[0]); }).join(', ')+' off</span>':'')+'</button>';
 }
 m.innerHTML=rotaTop(d,'month')+
-'<div class="board"><div class="hi"><b class="num">'+hrs(d.totals.hours)+'</b><span>Rota hours</span></div><div><b class="num">'+money(d.totals.cost)+'</b><span>Labour cost</span></div><div><b class="num">'+d.totals.shifts+'</b><span>Shifts</span></div><div class="'+(d.totals.open?'warn':'')+'"><b class="num">'+d.totals.open+'</b><span>Open shifts</span></div></div>'+
+'<div class="board rboard"><div class="hi"><b class="num">'+hrs(d.totals.hours)+'</b><span>Rota hours</span></div><div><b class="num">'+money(d.totals.cost)+'</b><span>Labour cost</span></div><div><b class="num">'+d.totals.shifts+'</b><span>Shifts</span></div><div class="'+(d.totals.open?'warn':'')+'"><b class="num">'+d.totals.open+'</b><span>Open shifts</span></div></div>'+
 '<div class="panel month"><div class="mh"><span></span>'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(x){ return '<span>'+x+'</span>'; }).join('')+'</div><div class="mg">'+cells+'</div></div>'+
 '<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Hours by person</h2></div>'+(d.people.length?'<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Shifts</th><th>Hours</th><th>Cost</th></tr></thead><tbody>'+
 d.people.map(function(p){ return '<tr><td><b>'+esc(p.name)+'</b><div class="hint">'+esc(p.jobRole)+'</div></td><td class="num">'+p.shifts+'</td><td class="num">'+hrs(p.hours)+'</td><td class="num">'+money(p.cost)+'</td></tr>'; }).join('')+'</tbody></table></div>':'<div class="pad hint">No shifts this month yet.</div>')+'</div>';
@@ -1566,7 +1581,7 @@ return '<div class="grid g2" style="margin-bottom:14px">'+
 }
 (function(){ var css='.cu-sec{margin-bottom:14px}.cu-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}'+
 '.cu-row:first-child{border-top:0}.cu-row label{font-weight:600;font-size:14px}.cu-row .hint{display:block;font-weight:400}.cu-row .inp{text-align:right}'+
-'.cu-calc{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);background:var(--sunk);font-weight:700;flex-wrap:wrap}'+
+'.cu-eod .cu-calc{background:var(--surface);font-weight:500}.cu-eod .cu-eod-tot{background:var(--sunk);font-weight:700}.cu-eod-tot b.num{font-size:20px}.cu-calc{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);background:var(--sunk);font-weight:700;flex-wrap:wrap}'+
 '.cu-d{font-variant-numeric:tabular-nums;padding:3px 9px;border-radius:999px;font-size:13px;font-weight:700;background:var(--green-soft);color:var(--green)}.cu-d.bad{background:var(--red-soft);color:var(--red)}.cu-d.zero{background:var(--sunk);color:var(--muted)}'+
 '.cu-ph{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;padding:12px 16px}.cu-pb{border:1.5px dashed var(--line);border-radius:10px;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:8px;cursor:pointer;background:var(--surface) center/cover no-repeat;font-size:13px;font-weight:600;position:relative;overflow:hidden}'+
 '.cu-pb.has{border-style:solid;color:#fff;text-shadow:0 1px 3px #000}.cu-pb.has::after{content:"";position:absolute;inset:0;background:#0006}.cu-pb span{position:relative;z-index:1}.cu-pb input{display:none}'+
@@ -1635,7 +1650,12 @@ m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+'</div
 '<div class="cu-calc"><span>Total TK sales (actual) <b class="num" id="cu_tka"></b><span class="hint" style="display:block">Card + cash + online</span></span><span id="cu_tkd"></span></div><div class="cu-calc"><span>Card</span><span id="cu_cdd"></span></div><div class="cu-calc"><span>Cash</span><span id="cu_csd"></span></div></div>'+
 '<div class="panel cu-sec"><div class="sec-h"><h2>Cafe</h2></div>'+CU_CAFE.map(fig).join('')+
 '<div class="cu-calc"><span>Cafe actual <b class="num" id="cu_cfa"></b></span><span id="cu_cfd"></span></div><div class="cu-calc"><span>Card</span><span id="cu_ccd"></span></div><div class="cu-calc"><span>Cash</span><span id="cu_cad"></span></div></div></div>'+
-'<div>'+(r.id&&r.status!=='Draft'&&d.date<today?onlineFinalPanel(r):'')+'<div class="panel cu-sec"><div class="sec-h"><h2>Photos</h2><span class="hint">Z report and card slip needed</span></div><div class="cu-ph">'+fileBox('ph_z','Till Z report',ph.z)+fileBox('ph_card','Card machine slip',ph.card)+fileBox('ph_cafe','Cafe report',ph.cafe)+'</div></div>'+
+'<div><div class="panel cu-sec cu-eod"><div class="sec-h"><h2>End of day total</h2></div>'+
+'<div class="cu-calc"><span>TeamKarting at cash up</span><b class="num" id="eod_tk"></b></div>'+
+'<div class="cu-calc" id="eod_late_row"><span>Online sales after close <span class="hint" id="eod_late_h" style="display:block"></span></span><b class="num" id="eod_late"></b></div>'+
+'<div class="cu-calc"><span>Cafe</span><b class="num" id="eod_cafe"></b></div>'+
+'<div class="cu-calc cu-eod-tot"><span><b>End of day total</b></span><b class="num" id="eod_tot"></b></div></div>'+
+(r.id&&r.status!=='Draft'&&d.date<today?onlineFinalPanel(r):'')+'<div class="panel cu-sec"><div class="sec-h"><h2>Photos</h2><span class="hint">Optional. They help if the figures need checking</span></div><div class="cu-ph">'+fileBox('ph_z','Till Z report',ph.z)+fileBox('ph_card','Card machine slip',ph.card)+fileBox('ph_cafe','Cafe report',ph.cafe)+'</div></div>'+
 '<div class="panel cu-sec"><div class="sec-h"><h2>Upsales</h2></div><div class="pad form"><label class="f">Upsales total (£)<input class="inp num" id="cu_upsales" inputmode="decimal" value="'+(r.upsales===''||r.upsales==null?'':r.upsales)+'" '+(lock?'disabled':'')+'></label><label class="f">What sold<input class="inp" id="cu_upsalesNote" value="'+esc(r.upsalesNote||'')+'" placeholder="Extra sessions, GoPro, drinks packages" '+(lock?'disabled':'')+'></label></div></div>'+
 '<div class="panel cu-sec"><div class="sec-h"><h2>Safety culture</h2><span class="hint">From the closing checks</span></div>'+
 (d.closing.length?'<ul class="list">'+d.closing.map(function(c){ return '<li><span class="dot '+(c.done?(c.fails?'red':'grn'):'amb')+'"></span><div class="grow"><div class="t">'+esc(c.name)+'</div><div class="s">'+(c.done?'Done by '+esc(c.by)+(c.fails?', '+c.fails+' fault'+(c.fails>1?'s':''):''):'Not done yet')+'</div></div>'+(c.done?'<button class="btn sm" data-rec="'+c.recId+'">View</button>':(d.date===today?'<button class="btn sm pri" data-start="'+c.id+'">Start</button>':''))+'</li>'; }).join('')+'</ul>':'<div class="pad hint">No closing checks are set up for '+esc(d.company)+'.</div>')+'</div>'+
@@ -1647,6 +1667,10 @@ var v=function(k){ var x=$('#cu_'+k); return x?x.value.trim():''; }, n=function(
 var chip=function(id, val, blank){ var el=$('#'+id); if(!el) return; if(blank){ el.innerHTML='<span class="cu-d zero">Waiting</span>'; return; } el.innerHTML='<span class="cu-d '+(Math.abs(val)>d.tolerance?'bad':Math.abs(val)<0.005?'zero':'')+'">'+(Math.abs(val)<0.005?'Balanced':sgn(val))+'</span>'; };
 var calc=function(){
 var tka=n('cardActual')+n('cashActual')+n('online'), cfa=n('cafeCardActual')+n('cafeCashActual'); $('#cu_tka').textContent=gbp(tka); $('#cu_cfa').textContent=gbp(cfa);
+var hasFinal=r.onlineFinal!==''&&r.onlineFinal!=null, late=hasFinal?Math.round((Number(r.onlineFinal)-n('online'))*100)/100:0;
+$('#eod_tk').textContent=gbp(tka); $('#eod_cafe').textContent=gbp(cfa); $('#eod_late').textContent=hasFinal?gbp(late):'Not added yet';
+$('#eod_late_h').textContent=hasFinal?'Final online for the day '+gbp(r.onlineFinal)+(r.onlineFinalBy?', added by '+r.onlineFinalBy:''):(d.date<today?'Add the final online total from Stripe':'Added tomorrow from Stripe');
+$('#eod_tot').textContent=gbp(tka+late+cfa);
 chip('cu_tkd', tka-n('tkReport'), !v('tkReport')); chip('cu_cdd', n('cardActual')-n('cardReport'), !v('cardActual')); chip('cu_csd', n('cashActual')-n('cashReport'), !v('cashActual'));
 chip('cu_cfd', cfa-n('cafeReport'), !v('cafeReport')); chip('cu_ccd', n('cafeCardActual')-n('cafeCardReport'), !v('cafeCardActual')); chip('cu_cad', n('cafeCashActual')-n('cafeCashReport'), !v('cafeCashActual'));
 var bad=[tka-n('tkReport'), n('cardActual')-n('cardReport'), n('cashActual')-n('cashReport'), v('cafeReport')?cfa-n('cafeReport'):0, n('cafeCardActual')-n('cafeCardReport'), n('cafeCashActual')-n('cafeCashReport')].some(function(x){ return Math.abs(x)>d.tolerance; });
@@ -1681,10 +1705,10 @@ function drawCashHist(d){
 var m=$('#main'), t=d.totals, mx=Math.max.apply(null, d.dow.map(function(x){ return x.avg; }).concat([1]));
 m.innerHTML='<button class="link" id="back" style="margin-bottom:10px">Back to today\'s cash up</button><div class="head"><div><div class="eyebrow">'+esc(d.company)+' cash ups</div><h1>'+esc(monthLabel(d.month))+'</h1><p>Tap a day to see the figures and photos, sign it off and mark the cash as banked.</p></div>'+
 '<div class="acts">'+coSelect(d,'ch_co')+'<span class="seg"><button id="chp" aria-label="Previous month">'+ICON.left+'</button><button id="chn" aria-label="Next month">'+ICON.right+'</button></span>'+(S.me.access==='Admin'?'<button class="btn" id="chtol">Tolerance '+gbp(d.tolerance)+'</button>':'')+'</div></div>'+
-'<div class="board"><div class="hi"><b class="num">'+gbp0(t.takings)+'</b><span>Takings</span></div><div><b class="num">'+gbp0(t.tk)+'</b><span>TeamKarting</span></div><div><b class="num">'+gbp0(t.cafe)+'</b><span>Cafe</span></div>'+
+'<div class="board"><div class="hi"><b class="num">'+gbp0(t.takings)+'</b><span>End of day totals</span></div><div><b class="num">'+gbp0(t.tk)+'</b><span>TeamKarting</span></div><div><b class="num">'+gbp0(t.cafe)+'</b><span>Cafe</span></div>'+
 '<div class="'+(Math.abs(t.disc)>d.tolerance?'warn':'')+'"><b class="num">'+sgn(t.disc)+'</b><span>Net discrepancy</span></div><div><b class="num">'+gbp0(t.upsales)+'</b><span>Upsales</span></div><div class="'+(t.notBanked?'warn':'')+'"><b class="num">'+gbp0(t.onSite)+'</b><span>Waiting to be banked</span></div><div class="'+(t.unsigned?'warn':'')+'"><b class="num">'+t.unsigned+'</b><span>Not signed off</span></div></div>'+
-'<div class="panel" style="margin-bottom:14px">'+(d.list.length?'<div class="tbl-wrap"><table><thead><tr><th>Day</th><th>Takings</th><th>TK</th><th>Cafe</th><th>Discrepancy</th><th>Banked</th><th>Status</th></tr></thead><tbody>'+
-d.list.map(function(c){ return '<tr class="click" data-c="'+c.id+'"><td><b>'+esc(dayName(c.date))+' '+dayNum(c.date)+'</b><div class="hint">'+esc(c.by||'')+'</div></td><td class="num">'+gbp(c.calc.takings)+'</td><td class="num">'+gbp(c.calc.tkActual)+'</td><td class="num">'+gbp(c.calc.cafeActual)+'</td>'+
+'<div class="panel" style="margin-bottom:14px">'+(d.list.length?'<div class="tbl-wrap"><table><thead><tr><th>Day</th><th>End of day</th><th>TK</th><th>Cafe</th><th>Discrepancy</th><th>Banked</th><th>Status</th></tr></thead><tbody>'+
+d.list.map(function(c){ return '<tr class="click" data-c="'+c.id+'"><td><b>'+esc(dayName(c.date))+' '+dayNum(c.date)+'</b><div class="hint">'+esc(c.by||'')+'</div></td><td class="num"><b>'+gbp(c.calc.takings)+'</b></td><td class="num">'+gbp(c.calc.tkDay)+(c.calc.onlineLate?'<div class="hint">incl. '+gbp(c.calc.onlineLate)+' online after close</div>':(c.onlineFinal===''||c.onlineFinal==null)&&c.status!=='Draft'?'<div class="hint">final online not added</div>':'')+'</td><td class="num">'+gbp(c.calc.cafeActual)+'</td>'+
 '<td><span class="cu-d '+(c.flags.length?'bad':Math.abs(c.calc.totalDisc)<0.005?'zero':'')+'">'+(Math.abs(c.calc.totalDisc)<0.005?'Balanced':sgn(c.calc.totalDisc))+'</span></td><td>'+(c.bankedAt?'<span class="chip grn">Banked</span>':c.status==='Draft'?'':'<span class="chip amb">'+gbp((Number(c.cashBanked)||0)+(Number(c.cafeCashBanked)||0))+'</span>')+'</td>'+
 '<td><span class="chip '+(c.status==='Signed off'?'grn':c.status==='Submitted'?'gold':'')+'">'+esc(c.status)+'</span></td></tr>'; }).join('')+'</tbody></table></div>':'<div class="pad hint">No cash ups this month.</div>')+'</div>'+
 '<div class="grid g2"><div class="panel"><div class="sec-h"><h2>Average takings by day</h2><span class="hint">This month</span></div><div class="dow">'+d.dow.map(function(x){ return '<div><b>'+(x.n?gbp0(x.avg):'')+'</b><i style="height:'+Math.round(x.avg/mx*70)+'px"></i>'+x.day+'</div>'; }).join('')+'</div></div>'+
@@ -1699,7 +1723,7 @@ function cashSheet(c){
 var k=c.calc, row=function(a,b){ return '<dt>'+esc(a)+'</dt><dd class="num">'+b+'</dd>'; }, rep=function(a,b){ return a===''||a==null?'':gbp(a); };
 var sh=sheetOpen('<div class="sheet-in" role="dialog"><div class="sheet-h"><div><div class="eyebrow">'+esc(c.company)+' cash up</div><h2>'+esc(dayName(c.date,true))+'</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div><div class="sheet-b">'+
 (c.flags.length?'<div class="err" style="margin:12px 16px 0">'+esc(c.flags.join(', '))+'</div>':'')+
-'<dl class="kv2">'+row('Takings (actual)','<b>'+gbp(k.takings)+'</b>')+row('TK sales report',rep(c.tkReport))+row('TK actual',gbp(k.tkActual)+' ('+sgn(k.tkDisc)+')')+row('Card report / actual',rep(c.cardReport)+' / '+rep(c.cardActual)+' ('+sgn(k.cardDisc)+')')+
+'<dl class="kv2">'+row('End of day total','<b>'+gbp(k.takings)+'</b> (TeamKarting '+gbp(k.tkDay)+' + cafe '+gbp(k.cafeActual)+')')+row('TK sales report',rep(c.tkReport))+row('TK actual',gbp(k.tkActual)+' ('+sgn(k.tkDisc)+')')+row('Card report / actual',rep(c.cardReport)+' / '+rep(c.cardActual)+' ('+sgn(k.cardDisc)+')')+
 row('Cash report / actual',rep(c.cashReport)+' / '+rep(c.cashActual)+' ('+sgn(k.cashDisc)+')')+row('Cash banked',rep(c.cashBanked)+(c.bagNo?', bag '+esc(c.bagNo):''))+
 row('Online at cash up',rep(c.online)+(c.onlineAt?' as at '+esc(dhm(c.onlineAt)):''))+
 row('Online final for the day',c.onlineFinal===''||c.onlineFinal==null?'<span class="chip amb">Not added yet</span>':gbp(c.onlineFinal)+(k.onlineLate?' (+'+gbp(k.onlineLate)+' after close)':'')+(c.onlineFinalBy?', '+esc(c.onlineFinalBy)+' '+esc(dhm(c.onlineFinalAt)):''))+
