@@ -447,7 +447,7 @@ function initials(n){ return String(n||'?').split(' ').map(function(x){return x[
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function hasMod(m){ return !!(S.me && (S.me.modules||[]).indexOf(m)>=0); }
 function isMgr(){ return hasMod('dashboard'); }
-var VIEW_MOD={dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
+var VIEW_MOD={garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
 function canView(v){ return !!VIEWS[v] && (!VIEW_MOD[v] || hasMod(VIEW_MOD[v])); }
 function stateChip(st, dueSoon){
 if (st==='Signed') return dueSoon ? '<span class="chip amb">Re-sign soon</span>' : '<span class="chip grn">Signed</span>';
@@ -1327,7 +1327,7 @@ var mine=d.rows.filter(function(r){ return r.mine && (r.status.state==='Due'||r.
 var cats={}; d.rows.forEach(function(r){ (cats[r.t.category]=cats[r.t.category]||[]).push(r); });
 var counts={done:0,due:0,over:0,faults:0}; d.rows.forEach(function(r){ var s=r.status.state; if(/^Done/.test(s)) counts.done++; if(s==='Due') counts.due++; if(s==='Overdue') counts.over++; if(s==='Done with faults') counts.faults++; });
 m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(S.me.company)+'</div><h1>Checks</h1><p>Opening, closing and safety checks. Faults go straight to the managers.</p></div>'+
-(d.manager?'<div class="acts"><button class="btn" id="ckhist">History</button><button class="btn pri" id="ckadmin">Manage checks</button></div>':'')+'</div>'+
+'<div class="acts"><button class="btn" id="ckkart">Report a kart problem</button>'+(d.manager?'<button class="btn" id="ckhist">History</button><button class="btn pri" id="ckadmin">Manage checks</button>':'')+'</div>'+'</div>'+
 (d.manager?'<div class="board"><div class="hi"><b class="num">'+counts.done+'</b><span>Done</span></div><div><b class="num">'+counts.due+'</b><span>Due</span></div><div class="'+(counts.over?'warn':'')+'"><b class="num">'+counts.over+'</b><span>Overdue</span></div><div class="'+(counts.faults?'warn':'')+'"><b class="num">'+counts.faults+'</b><span>With faults</span></div></div>':'')+
 (d.requests.length?'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Asked of you</h2><span class="chip gold">'+d.requests.length+'</span></div><ul class="list">'+d.requests.map(function(t){
 return '<li><span class="dot gold"></span><div class="grow"><div class="t">'+esc(t.title)+'</div><div class="s">From '+esc(t.createdName)+(t.due?' · due '+fmt(t.due):'')+(t.notes?' · '+esc(t.notes):'')+'</div></div><button class="btn sm pri" data-start="'+t.checkTemplateId+'" data-task="'+t.id+'">Start</button></li>'; }).join('')+'</ul></div>':'')+
@@ -1339,6 +1339,7 @@ return '<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>'+e
 return '<li><div class="grow"><div class="t">'+esc(x.name)+'</div><div class="s">'+esc(x.by)+' · '+esc(dayName(toYmd(new Date(x.at))))+' '+hhmm(x.at)+'</div></div>'+(x.fails?'<span class="chip red">'+x.fails+' fault'+(x.fails>1?'s':'')+'</span>':x.warns?'<span class="chip amb">'+x.warns+' warning'+(x.warns>1?'s':'')+'</span>':'<span class="chip grn">All OK</span>')+'<button class="btn sm" data-rec="'+x.id+'">View</button></li>'; }).join('')+'</ul></div>':'');
 if ($('#ckadmin')) $('#ckadmin').onclick=function(){ go('checkadmin'); };
 if ($('#ckhist')) $('#ckhist').onclick=function(){ go('checkhistory'); };
+if ($('#ckkart')) $('#ckkart').onclick=function(){ kartFaultSheet(); };
 ckBind(m, d);
 }).catch(function(e){ m.innerHTML=errBox(e); });
 };
@@ -1945,7 +1946,7 @@ b.hidden=true; }).catch(function(e){ $('#prmsg',el).innerHTML=errBox(e); b.disab
 function homeMoneyPanel(d){
 var x=d.extra||{}, btns=[];
 if (x.canCash) btns.push('<button class="btn '+(x.cashToday&&x.cashToday!=='Draft'?'':'pri')+'" id="hcash">'+ICON.cashup+' '+(x.cashToday&&x.cashToday!=='Draft'?'Cash up done':x.cashToday==='Draft'?'Finish the cash up':'Cash up')+'</button>');
-btns.push('<button class="btn" id="hinc">'+ICON.incidents+' Report an incident</button>');
+btns.push('<button class="btn" id="hinc">'+ICON.incidents+' Report an incident</button>'); btns.push('<button class="btn" id="hkart">'+ICON.garage+' Report a kart problem</button>');
 var due=(x.onlineDue||[])[0];
 btns.push(x.offSick?'<span class="chip red">You are marked as off sick</span>':'<button class="btn" id="hsick">Report sick</button>');
 return (due?onlineFinalPanel({id:due.id, date:due.date, online:due.online, onlineAt:due.onlineAt, onlineFinal:''}, true):'')+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+btns.join('')+'</div>';
@@ -1967,6 +1968,7 @@ function bindHomeMoney(){
 if ($('#hcash')) $('#hcash').onclick=function(){ go('cashup'); };
 bindOnlineFinal(document, function(){ VIEWS[S.view] ? VIEWS[S.view]() : render(); });
 if ($('#hinc')) $('#hinc').onclick=function(){ incidentSheet(); };
+if ($('#hkart')) $('#hkart').onclick=function(){ kartFaultSheet(); };
 if ($('#hsick')) $('#hsick').onclick=sickSheet;
 }
 function dashMoneyPanels(d){
@@ -1991,7 +1993,7 @@ ICON.access='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><pa
 function navTabs(){
 var t=[], add=function(v,l,m){ if(!m||hasMod(m)) t.push([v,l]); };
 add('dash','Dashboard','dashboard'); if(!isMgr()) t.push(['home','Home']);
-add('tasks','Tasks','tasks'); t.push(['checks','Checks']); add('cashup','Cash up','cashup'); t.push(['incidents','Incidents']);
+add('tasks','Tasks','tasks'); t.push(['checks','Checks']); add('cashup','Cash up','cashup'); t.push(['incidents','Incidents']); add('garage','Garage','garage');
 add('rota','Rota','rota'); if(hasMod('timesheets')&&!hasMod('rota')) t.push(['timesheets','Timesheets']);
 if(hasMod('staff')) t.push(['staff','Staff']); else if(hasMod('absence')) t.push(['absence','Absence']);
 add('contracts','Contracts','contracts');
@@ -2253,6 +2255,225 @@ return '<div class="panel pad"><h2 style="margin-bottom:8px">Signing in</h2><p c
 function bindPwPanel(){
 if($('#pwset')) $('#pwset').onclick=function(){ pwSheet(false); };
 if($('#pwdel')) $('#pwdel').onclick=function(){ if(!confirmBox('Remove your password? You will sign in with an emailed code instead.')) return; call('removePassword',{}).then(function(){ S.me.hasPassword=false; toast('Password removed'); VIEWS.me(); }).catch(function(e){ toast(e.message); }); };
+}
+var G_TAB='work';
+ICON.garage='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22.7 19 13.6 9.9c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>';
+(function(){ var st=document.createElement('style'); st.textContent='.list li.click{cursor:pointer}.list li.click:hover{background:var(--sunk)}'; document.head.appendChild(st); })();
+function kStatusChip(s){ return '<span class="chip '+(s==='In service'?'grn':s==='In workshop'?'amb':s==='Retired'?'':'red')+'">'+esc(s)+'</span>'; }
+function prChip(p){ return p==='Urgent'?'<span class="chip red">Urgent</span>':p==='High'?'<span class="chip amb">High</span>':p==='Low'?'<span class="chip">Low</span>':''; }
+function jStatChip(s){ return '<span class="chip '+(s==='Done'?'grn':s==='Waiting for parts'?'amb':s==='Cancelled'?'':'gold')+'">'+esc(s)+'</span>'; }
+function gn(v){ var n=Number(v)||0; return n%1?n.toFixed(1):String(n); }
+function jobLi(j){
+return '<li class="click" data-job="'+esc(j.id)+'"><span class="dot '+(j.priority==='Urgent'?'red':j.status==='Waiting for parts'?'amb':j.status==='In progress'?'gold':'grn')+'"></span><div class="grow"><div class="t">'+(j.kartNo?'Kart '+esc(j.kartNo)+' · ':'')+esc(j.title)+'</div>'+
+'<div class="s">'+esc(j.ref)+' · '+esc(j.source)+' · '+esc(j.status)+(j.stepsTotal?' · '+j.stepsDone+'/'+j.stepsTotal+' steps':'')+(j.assignee?' · '+esc(j.assignee):' · not assigned')+' · '+fmt(j.createdAt)+'</div></div>'+prChip(j.priority)+'</li>';
+}
+VIEWS.garage = function(){
+var m=$('#main'); busy(m);
+call('garage').then(drawGarage).catch(function(e){ m.innerHTML=errBox(e); });
+};
+function drawGarage(d){
+S.data.garage=d; var m=$('#main'), t=d.totals;
+var tab=function(id,l,n){ return '<button data-gt="'+id+'" aria-pressed="'+(G_TAB===id)+'">'+l+(n?' ('+n+')':'')+'</button>'; };
+m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+'</div><h1>Garage</h1><p>The kart fleet, servicing, job cards and faults reported by the team. Unsafe karts come out of service the moment they are reported.</p></div>'+
+'<div class="acts"><button class="btn" id="g_use">Log hours and laps</button><button class="btn" id="g_fault">Report a problem</button><button class="btn pri" id="g_job">'+ICON.plus+' Job card</button></div></div>'+
+'<div class="board"><div class="hi"><b class="num">'+t.inService+'<small style="font-size:16px;opacity:.6">/'+t.karts+'</small></b><span>Karts in service</span></div><div class="'+(t.out?'warn':'')+'"><b class="num">'+t.out+'</b><span>Off track</span></div>'+
+'<div><b class="num">'+t.jobs+'</b><span>Open job cards</span></div><div class="'+(t.urgent?'warn':'')+'"><b class="num">'+t.urgent+'</b><span>Urgent</span></div>'+
+'<div class="'+(t.faults?'warn':'')+'"><b class="num">'+t.faults+'</b><span>New faults</span></div><div class="'+(t.due?'warn':'')+'"><b class="num">'+t.due+'</b><span>Services due</span></div></div>'+
+'<div style="margin:14px 0"><div class="seg" role="group">'+tab('work','Workload',t.jobs)+tab('fleet','Fleet',t.karts)+tab('tpl','Job card templates',d.templates.length)+tab('rules','Service schedule',d.rules.filter(function(r){ return r.active; }).length)+'</div></div><div id="g_body"></div>';
+m.querySelectorAll('[data-gt]').forEach(function(b){ b.onclick=function(){ G_TAB=b.dataset.gt; drawGarage(S.data.garage); }; });
+$('#g_use').onclick=function(){ usageSheet(d); }; $('#g_fault').onclick=function(){ kartFaultSheet(); }; $('#g_job').onclick=function(){ jobNewSheet(d); };
+var b=$('#g_body');
+if (G_TAB==='work') b.innerHTML=garageWork(d);
+if (G_TAB==='fleet') b.innerHTML=garageFleet(d);
+if (G_TAB==='tpl') b.innerHTML=garageTpl(d);
+if (G_TAB==='rules') b.innerHTML=garageRules(d);
+b.querySelectorAll('[data-job]').forEach(function(r){ r.onclick=function(){ jobSheet(r.dataset.job); }; });
+b.querySelectorAll('[data-kart]').forEach(function(r){ r.onclick=function(){ kartSheet(r.dataset.kart); }; });
+b.querySelectorAll('[data-tpl]').forEach(function(r){ r.onclick=function(){ templateSheet(d, d.templates.filter(function(x){ return x.id===r.dataset.tpl; })[0]); }; });
+b.querySelectorAll('[data-rule]').forEach(function(r){ r.onclick=function(){ ruleSheet(d, d.rules.filter(function(x){ return x.id===r.dataset.rule; })[0]); }; });
+b.querySelectorAll('[data-nofault]').forEach(function(x){ x.onclick=function(e){ e.stopPropagation(); if(!confirm('Close this report as no fault found? The job card will be cancelled.')) return; call('faultDecide',{id:x.dataset.nofault, noFault:true}).then(function(r){ toast('Closed, no fault found'); drawGarage(r); }).catch(function(e){ toast(e.message); }); }; });
+var on=function(id,f){ var e=$('#'+id,b); if(e) e.onclick=f; };
+on('g_addk',function(){ kartEditSheet(d); }); on('g_addt',function(){ templateSheet(d); }); on('g_addr',function(){ ruleSheet(d); });
+}
+function garageWork(d){
+var urgent=d.jobs.filter(function(j){ return j.priority==='Urgent'; }), rest=d.jobs.filter(function(j){ return j.priority!=='Urgent'; });
+var duePanel=d.due.length?'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Service schedule</h2><span class="chip '+(d.totals.due?'red':'amb')+'">'+d.due.length+'</span></div><ul class="list">'+d.due.map(function(x){
+return '<li class="click" data-kart="'+esc(x.kartId)+'"><span class="dot '+(x.due?'red':'amb')+'"></span><div class="grow"><div class="t">Kart '+esc(x.kartNo)+' · '+esc(x.rule)+'</div><div class="s">'+esc(x.detail)+'</div></div>'+(x.due?(x.hasJob?'<span class="chip gold">Job card raised</span>':'<span class="chip red">Due</span>'):'<span class="chip amb">Coming up</span>')+'</li>'; }).join('')+'</ul></div>':'';
+var faults=d.faults.length?'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Faults reported by the team</h2><span class="chip red">'+d.faults.length+'</span></div><ul class="list">'+d.faults.map(function(f){
+return '<li class="click" data-job="'+esc(f.jobId)+'"><span class="dot '+(f.unsafe?'red':'amb')+'"></span><div class="grow"><div class="t">Kart '+esc(f.kartNo)+' · '+esc(f.category)+(f.unsafe?' · unsafe':'')+'</div><div class="s">'+esc(f.description)+'</div><div class="s">'+esc(f.ref)+' · '+esc(f.reportedBy)+' · '+dhm(f.reportedAt)+(f.photos?' · '+f.photos+' photo'+(f.photos>1?'s':''):'')+'</div></div>'+
+'<button class="btn sm" data-nofault="'+esc(f.id)+'">No fault</button></li>'; }).join('')+'</ul></div>':'';
+return '<div class="grid g2"><div>'+
+'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Job cards</h2><span class="chip '+(urgent.length?'red':'gold')+'">'+d.jobs.length+' open</span></div>'+
+(d.jobs.length?'<ul class="list">'+urgent.concat(rest).map(jobLi).join('')+'</ul>':'<p class="pad hint">Nothing open. The workshop is clear.</p>')+'</div></div>'+
+'<div>'+faults+duePanel+
+(d.done.length?'<div class="panel"><div class="sec-h"><h2>Done in the last 7 days</h2><span class="chip grn">'+d.done.length+'</span></div><ul class="list">'+d.done.slice(0,10).map(jobLi).join('')+'</ul></div>':'')+
+(!faults&&!duePanel&&!d.done.length?'<div class="panel pad hint">No faults or services due.</div>':'')+'</div></div>';
+}
+function garageFleet(d){
+if (!d.fleet.length) return '<div class="panel pad"><h2 style="margin-top:0">Add the fleet</h2><p class="hint">Add each kart with its number and type. Put in the running hours and laps it has done so far if you know them, so servicing starts from the right place.</p><button class="btn pri" id="g_addk">'+ICON.plus+' Add a kart</button></div>';
+return '<div class="panel"><div class="sec-h"><h2>Fleet</h2><div class="acts"><button class="btn sm pri" id="g_addk">'+ICON.plus+' Add a kart</button></div></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Kart</th><th>Type</th><th>Status</th><th class="num">Hours</th><th class="num">Laps</th><th>Last used</th><th>Work</th></tr></thead><tbody>'+
+d.fleet.map(function(k){ return '<tr class="click" data-kart="'+esc(k.id)+'"><td><b>'+esc(k.number)+'</b>'+(k.name?' <span class="hint">'+esc(k.name)+'</span>':'')+'</td><td>'+esc(k.type)+'</td><td>'+kStatusChip(k.status)+'</td><td class="num">'+gn(k.hours)+'</td><td class="num">'+k.laps+'</td><td>'+(k.lastUsed?fmt(k.lastUsed):'<span class="hint">Not logged</span>')+'</td>'+
+'<td>'+(k.urgent?'<span class="chip red">Urgent</span> ':'')+(k.openJobs?'<span class="chip gold">'+k.openJobs+' job'+(k.openJobs>1?'s':'')+'</span> ':'')+(k.due?'<span class="chip red">Service due</span> ':'')+(k.soon?'<span class="chip amb">Service soon</span>':'')+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
+}
+function garageTpl(d){
+return '<div class="panel"><div class="sec-h"><h2>Job card templates</h2><div class="acts"><button class="btn sm pri" id="g_addt">'+ICON.plus+' New template</button></div></div>'+
+(d.templates.length?'<ul class="list">'+d.templates.map(function(t){ return '<li class="click" data-tpl="'+esc(t.id)+'"><span class="dot gold"></span><div class="grow"><div class="t">'+esc(t.name)+'</div><div class="s">'+t.steps.length+' steps'+(t.estMins?' · about '+esc(t.estMins)+' minutes':'')+' · '+esc(t.steps.slice(0,3).map(function(s){ return s.label; }).join(', '))+(t.steps.length>3?'...':'')+'</div></div></li>'; }).join('')+'</ul>':
+'<p class="pad hint">Build a checklist once and use it on every job: a 10 hour service, brake bleed, tyre change, engine swap. Each step gets ticked off and signed by whoever did it.</p>')+'</div>';
+}
+function garageRules(d){
+var tn=function(id){ var t=d.templates.filter(function(x){ return x.id===id; })[0]; return t?t.name:''; };
+var every=function(r){ return [r.everyHours?r.everyHours+' hours':'', r.everyLaps?r.everyLaps+' laps':'', r.everyDays?r.everyDays+' days':''].filter(Boolean).join(' or '); };
+return '<div class="panel"><div class="sec-h"><h2>Service schedule</h2><div class="acts"><button class="btn sm pri" id="g_addr">'+ICON.plus+' New service</button></div></div>'+
+'<p class="pad hint" style="margin:0;border-bottom:1px solid var(--line)">When a kart reaches the hours, laps or days set here, a job card is raised for the mechanic automatically, using the template if one is picked. Whichever comes first counts.</p>'+
+(d.rules.length?'<ul class="list">'+d.rules.map(function(r){ return '<li class="click" data-rule="'+esc(r.id)+'"><span class="dot '+(r.active?'grn':'')+'"></span><div class="grow"><div class="t">'+esc(r.name)+'</div><div class="s">Every '+esc(every(r))+' · '+esc(r.appliesTo==='All'?'All karts':r.appliesTo)+(r.templateId?' · uses '+esc(tn(r.templateId)):'')+'</div></div>'+(r.active?prChip(r.priority):'<span class="chip">Off</span>')+'</li>'; }).join('')+'</ul>':
+'<p class="pad hint">Nothing set yet. Start with the basics, for example a brake and steering check every 10 hours and a full service every 50.</p>')+'</div>';
+}
+function gRefresh(r){ if (S.view==='garage') drawGarage(r && r.fleet ? r : S.data.garage); }
+function kartFaultSheet(kartId){
+call('kartFaultForm').then(function(f){
+var photos=[];
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:620px"><div class="sheet-h"><div><div class="eyebrow">Garage</div><h2>Report a kart problem</h2><p class="hint" style="margin:4px 0 0">Anything wrong with a kart, big or small. If it is not safe to drive, tick the box and pull it off track now.</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="kff">'+
+(f.karts.length?'<label class="f">Kart<select class="inp" id="kf_k" required><option value="">Choose</option>'+f.karts.map(function(k){ return '<option value="'+esc(k.id)+'"'+(k.id===kartId?' selected':'')+'>'+esc(k.number)+(k.name?' '+esc(k.name):'')+' · '+esc(k.type)+(k.status!=='In service'?' ('+esc(k.status)+')':'')+'</option>'; }).join('')+'</select></label>':
+'<label class="f">Kart number<input class="inp" id="kf_no" required></label>')+
+'<label class="f">What is it<select class="inp" id="kf_c" required><option value="">Choose</option>'+mopt(f.categories,'')+'</select></label>'+
+'<label class="f wide">What is wrong<textarea class="inp" rows="3" id="kf_d" required placeholder="What you noticed and when. For example: brakes feel spongy, pulls left under braking, noticed after the 3pm session."></textarea></label>'+
+'<label class="check wide" style="background:var(--red-soft);padding:10px 12px;border-radius:10px"><input type="checkbox" id="kf_u"> <span><b>Not safe to drive.</b> Take it out of service now and tell the mechanic.</span></label>'+
+'<div class="wide cu-ph" style="padding:0">'+fileBox('kf_p1','Close up',false)+fileBox('kf_p2','Whole kart',false)+fileBox('kf_p3','Anything else',false)+'</div><div class="wide" id="kfmsg"></div></form>'+
+'<div class="sheet-f"><button class="btn pri" id="kfgo">Send to the garage</button></div></div>'), el=sh.el, busyUp=0;
+['kf_p1','kf_p2','kf_p3'].forEach(function(id){ bindFileBox(el,id,function(data){ busyUp++; toast('Uploading photo...'); call('uploadKartPhoto',{data:data, name:'kart fault'}).then(function(r){ photos.push(r.id); toast('Photo saved'); }).catch(function(e){ toast(e.message); }).then(function(){ busyUp--; }); }); });
+$('#kfgo',el).onclick=function(){ if(!$('#kff',el).reportValidity()) return; if(busyUp){ toast('Photos still uploading, try again in a moment'); return; } var b=this; b.disabled=true;
+var k=$('#kf_k',el), no=$('#kf_no',el);
+call('reportKartFault',{kartId:k?k.value:'', kartNo:no?no.value:'', category:$('#kf_c',el).value, description:$('#kf_d',el).value, unsafe:$('#kf_u',el).checked, photos:photos})
+.then(function(r){ sh.close(); toast(r.ref+' sent to the garage'+(r.outOfService?'. The kart is now out of service':'')); if(S.view==='garage') VIEWS.garage(); })
+.catch(function(e){ $('#kfmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}).catch(function(e){ toast(e.message); });
+}
+function kartEditSheet(d, k){
+k=k||{};
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:620px"><div class="sheet-h"><div><div class="eyebrow">Fleet</div><h2>'+(k.id?'Edit kart '+esc(k.number):'Add a kart')+'</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="kef"><label class="f">Kart number<input class="inp" id="ke_no" required value="'+esc(k.number||'')+'" placeholder="For example 12"></label><label class="f">Name or nickname<input class="inp" id="ke_n" value="'+esc(k.name||'')+'"></label>'+
+'<label class="f">Type<select class="inp" id="ke_t">'+mopt(d.types,k.type||'Adult single')+'</select></label><label class="f">Engine<input class="inp" id="ke_e" value="'+esc(k.engine||'')+'" placeholder="Make, model, serial"></label>'+
+'<label class="f">Chassis<input class="inp" id="ke_c" value="'+esc(k.chassis||'')+'"></label><label class="f">Transponder<input class="inp" id="ke_tr" value="'+esc(k.transponder||'')+'" placeholder="For the timing system"></label>'+
+(k.id?'':'<label class="f">Running hours so far<input class="inp num" id="ke_h" inputmode="decimal" placeholder="0"></label><label class="f">Laps so far<input class="inp num" id="ke_l" inputmode="numeric" placeholder="0"></label>')+
+'<label class="f wide">Notes<textarea class="inp" rows="2" id="ke_no2">'+esc(k.notes||'')+'</textarea></label><div class="wide" id="kemsg"></div></form><div class="sheet-f"><button class="btn pri" id="kego">Save</button></div></div>'), el=sh.el;
+var v=function(id){ var e=$('#'+id,el); return e?e.value:''; };
+$('#kego',el).onclick=function(){ if(!$('#kef',el).reportValidity()) return; var b=this; b.disabled=true;
+call('kartSave',{id:k.id, number:v('ke_no'), name:v('ke_n'), type:v('ke_t'), engine:v('ke_e'), chassis:v('ke_c'), transponder:v('ke_tr'), hours:v('ke_h'), laps:v('ke_l'), notes:v('ke_no2')})
+.then(function(r){ sh.close(); toast('Saved'); S.data.garage=r; if(k.id) kartSheet(k.id); gRefresh(r); }).catch(function(e){ $('#kemsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+function kartSheet(id){
+call('kartFile',{id:id}).then(function(x){
+var k=x.kart;
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:820px"><div class="sheet-h"><div><div class="eyebrow">'+esc(k.type)+(k.engine?' · '+esc(k.engine):'')+'</div><h2>Kart '+esc(k.number)+(k.name?' · '+esc(k.name):'')+' '+kStatusChip(k.status)+'</h2>'+(k.statusNote?'<p class="hint" style="margin:4px 0 0">'+esc(k.statusNote)+'</p>':'')+'</div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<div class="sheet-b pad">'+
+'<div class="board" style="margin-bottom:14px"><div class="hi"><b class="num">'+gn(k.hours)+'</b><span>Running hours</span></div><div><b class="num">'+k.laps+'</b><span>Laps</span></div><div><b class="num" style="font-size:22px">'+(k.lastUsed?fmt(k.lastUsed):'Not logged')+'</b><span>Last used</span></div></div>'+
+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end"><label class="f" style="margin:0">Status<select class="inp" id="ks_s">'+mopt(x.statuses,k.status)+'</select></label><label class="f" style="flex:1;min-width:180px;margin:0">Reason<input class="inp" id="ks_n" placeholder="Why the change"></label><button class="btn" id="ks_go">Update status</button></div>'+
+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><button class="btn pri" id="ks_job">'+ICON.plus+' Job card for this kart</button><button class="btn" id="ks_f">Report a problem</button><button class="btn" id="ks_e">Edit details</button></div>'+
+'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Servicing</h2></div>'+(x.service.length?'<ul class="list">'+x.service.map(function(s){ return '<li><span class="dot '+(s.due?'red':s.soon?'amb':'grn')+'"></span><div class="grow"><div class="t">'+esc(s.rule)+'</div><div class="s">'+esc(s.detail)+' · last done '+(s.lastDone?fmt(s.lastDone):'never')+'</div></div>'+(s.due?'<span class="chip red">Due</span>':s.soon?'<span class="chip amb">Soon</span>':'<span class="chip grn">OK</span>')+'</li>'; }).join('')+'</ul>':'<p class="pad hint">No service schedule covers this kart yet. Add one under Service schedule.</p>')+'</div>'+
+'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Job cards</h2><span class="chip">'+x.jobs.length+'</span></div>'+(x.jobs.length?'<ul class="list">'+x.jobs.map(jobLi).join('')+'</ul>':'<p class="pad hint">None yet.</p>')+'</div>'+
+'<div class="grid g2"><div class="panel"><div class="sec-h"><h2>Faults</h2></div>'+(x.faults.length?'<ul class="list">'+x.faults.map(function(f){ return '<li><span class="dot '+(f.status==='Open'?(f.unsafe?'red':'amb'):'grn')+'"></span><div class="grow"><div class="t">'+esc(f.category)+' · '+esc(f.status)+'</div><div class="s">'+esc(f.description)+'</div><div class="s">'+esc(f.reportedBy)+' · '+fmt(f.reportedAt)+'</div></div></li>'; }).join('')+'</ul>':'<p class="pad hint">None reported.</p>')+'</div>'+
+'<div class="panel"><div class="sec-h"><h2>Usage</h2></div>'+(x.usage.length?'<ul class="list">'+x.usage.map(function(u){ return '<li><div class="grow"><div class="t">'+fmt(u.date)+'</div><div class="s">'+esc(u.source)+' · '+esc(u.by)+'</div></div><span>'+gn(u.hours)+' h · '+u.laps+' laps</span></li>'; }).join('')+'</ul>':'<p class="pad hint">Nothing logged yet.</p>')+'</div></div>'+
+'</div></div>'), el=sh.el;
+$('#ks_go',el).onclick=function(){ var b=this, st=$('#ks_s',el).value, go=function(ov){ b.disabled=true; call('kartStatus',{id:k.id, status:st, note:$('#ks_n',el).value, override:ov}).then(function(){ sh.close(); toast('Kart '+k.number+' is now '+st.toLowerCase()); kartSheet(k.id); if(S.view==='garage') VIEWS.garage(); }).catch(function(e){ b.disabled=false; if(/urgent job card/.test(e.message)&&confirm(e.message+'\n\nPut it back in service anyway?')) go(true); else toast(e.message); }); }; go(false); };
+$('#ks_job',el).onclick=function(){ sh.close(); jobNewSheet(S.data.garage, k.id); };
+$('#ks_f',el).onclick=function(){ sh.close(); kartFaultSheet(k.id); };
+$('#ks_e',el).onclick=function(){ sh.close(); kartEditSheet(S.data.garage||{types:x.types}, k); };
+el.querySelectorAll('[data-job]').forEach(function(r){ r.onclick=function(){ sh.close(); jobSheet(r.dataset.job); }; });
+}).catch(function(e){ toast(e.message); });
+}
+function usageSheet(d){
+var live=d.fleet.filter(function(k){ return k.status!=='Retired'; });
+if (!live.length){ toast('Add the karts to the fleet first'); return; }
+var today=toYmd(new Date());
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:640px"><div class="sheet-h"><div><div class="eyebrow">Garage</div><h2>Log hours and laps</h2><p class="hint" style="margin:4px 0 0">Add what each kart did today. Services that come due raise job cards straight away. Later this will come in from the timing system on its own.</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<div class="sheet-b pad"><div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px"><label class="f" style="margin:0">Date<input class="inp" type="date" id="us_d" value="'+today+'" max="'+today+'"></label><div class="seg" style="margin-left:auto"><button aria-pressed="true" data-um="k">Kart by kart</button><button aria-pressed="false" data-um="p">Paste from timing</button></div></div>'+
+'<div id="us_k"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Kart</th><th class="num">Hours today</th><th class="num">Laps today</th><th class="num">Total hours</th></tr></thead><tbody>'+
+live.map(function(k){ return '<tr><td><b>'+esc(k.number)+'</b> '+(k.status!=='In service'?kStatusChip(k.status):'')+'</td><td class="num"><input class="inp num" style="width:90px" data-uh="'+esc(k.id)+'" inputmode="decimal" placeholder="0"></td><td class="num"><input class="inp num" style="width:90px" data-ul="'+esc(k.id)+'" inputmode="numeric" placeholder="0"></td><td class="num">'+gn(k.hours)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'+
+'<div id="us_p" hidden><p class="hint" style="margin-top:0">One kart per line: kart number, hours, laps. Commas or tabs both work, so you can copy straight from a spreadsheet or timing export.</p><textarea class="inp" rows="8" id="us_t" style="width:100%;font-family:monospace" placeholder="12, 1.5, 84\n14, 2, 110"></textarea></div>'+
+'<div id="usmsg"></div></div><div class="sheet-f"><button class="btn pri" id="usgo">Save</button></div></div>'), el=sh.el, mode='k';
+el.querySelectorAll('[data-um]').forEach(function(b){ b.onclick=function(){ mode=b.dataset.um; el.querySelectorAll('[data-um]').forEach(function(x){ x.setAttribute('aria-pressed', x===b); }); $('#us_k',el).hidden=mode!=='k'; $('#us_p',el).hidden=mode!=='p'; }; });
+$('#usgo',el).onclick=function(){ var b=this, date=$('#us_d',el).value; b.disabled=true;
+var done=function(r){ sh.close(); toast(r.logged+' kart'+(r.logged===1?'':'s')+' updated'+(r.jobsRaised?', '+r.jobsRaised+' service job card'+(r.jobsRaised>1?'s':'')+' raised':'')+(r.skipped&&r.skipped.length?'. Skipped: '+r.skipped.join('; '):'')); S.data.garage=r.garage; gRefresh(r.garage); };
+var fail=function(e){ $('#usmsg',el).innerHTML=errBox(e); b.disabled=false; };
+if (mode==='p') return call('importUsage',{date:date, text:$('#us_t',el).value}).then(done).catch(fail);
+var rows=live.map(function(k){ return { kartId:k.id, hours:$('[data-uh="'+k.id+'"]',el).value, laps:$('[data-ul="'+k.id+'"]',el).value }; }).filter(function(r){ return r.hours||r.laps; });
+call('logUsage',{date:date, rows:rows}).then(done).catch(fail); };
+}
+function jobNewSheet(d, kartId){
+if (!d){ call('garage').then(function(r){ S.data.garage=r; jobNewSheet(r, kartId); }).catch(function(e){ toast(e.message); }); return; }
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:640px"><div class="sheet-h"><div><div class="eyebrow">Garage</div><h2>New job card</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="jnf"><label class="f">Kart<select class="inp" id="jn_k"><option value="">Not kart specific</option>'+d.fleet.map(function(k){ return '<option value="'+esc(k.id)+'"'+(k.id===kartId?' selected':'')+'>'+esc(k.number)+(k.name?' '+esc(k.name):'')+'</option>'; }).join('')+'</select></label>'+
+'<label class="f">Template<select class="inp" id="jn_t"><option value="">None, write the steps</option>'+d.templates.map(function(t){ return '<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>'; }).join('')+'</select></label>'+
+'<label class="f wide">Job<input class="inp" id="jn_ti" placeholder="For example replace front brake pads"></label>'+
+'<label class="f wide" id="jn_sw">Steps, one per line<textarea class="inp" rows="4" id="jn_s" placeholder="Strip and clean calipers\nFit new pads\nBleed brakes\nTest on track"></textarea></label>'+
+'<label class="f">Priority<select class="inp" id="jn_p">'+mopt(['Normal','High','Urgent','Low'],'Normal')+'</select></label><label class="f">Assign to<select class="inp" id="jn_a"><option value="">Anyone in the garage</option>'+d.mechanics.map(function(s){ return '<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>'; }).join('')+'</select></label>'+
+'<label class="f wide">Notes<input class="inp" id="jn_n"></label><label class="check wide"><input type="checkbox" id="jn_o"> Take the kart off track while this is done</label><div class="wide" id="jnmsg"></div></form>'+
+'<div class="sheet-f"><button class="btn pri" id="jngo">Create job card</button></div></div>'), el=sh.el;
+$('#jn_t',el).onchange=function(){ var tv=this.value, t=d.templates.filter(function(x){ return x.id===tv; })[0]; $('#jn_sw',el).hidden=!!t; if(t&&!$('#jn_ti',el).value) $('#jn_ti',el).value=t.name; };
+$('#jngo',el).onclick=function(){ var b=this; b.disabled=true;
+call('jobSave',{kartId:$('#jn_k',el).value, templateId:$('#jn_t',el).value, title:$('#jn_ti',el).value, steps:$('#jn_t',el).value?[]:$('#jn_s',el).value.split('\n'), priority:$('#jn_p',el).value, assignedTo:$('#jn_a',el).value, notes:$('#jn_n',el).value, takeOut:$('#jn_o',el).checked})
+.then(function(r){ sh.close(); toast(r.job.ref+' created'); if(S.view==='garage') VIEWS.garage(); jobSheet(r.job.id, r); }).catch(function(e){ $('#jnmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+function jobSheet(id, pre){
+var go=function(x){
+var j=x.job, open=['Open','In progress','Waiting for parts'].indexOf(j.status)>=0, left=j.steps.filter(function(s){ return !s.done; }).length;
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:720px"><div class="sheet-h"><div><div class="eyebrow">'+esc(j.ref)+' · '+esc(j.source)+(x.kart?' · Kart '+esc(x.kart.number)+' '+kStatusChip(x.kart.status):'')+'</div><h2>'+esc(j.title)+' '+jStatChip(j.status)+' '+prChip(j.priority)+'</h2>'+
+'<p class="hint" style="margin:4px 0 0">Opened '+dhm(j.createdAt)+' by '+esc(j.createdBy)+(j.doneAt?' · done '+dhm(j.doneAt)+' by '+esc(j.doneBy):'')+'</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div><div class="sheet-b pad">'+
+(x.fault?'<div class="panel pad" style="margin-bottom:14px;border-left:4px solid var(--'+(x.fault.unsafe?'red':'amber')+')"><b>'+esc(x.fault.ref)+' · '+esc(x.fault.category)+(x.fault.unsafe?' · reported unsafe':'')+'</b><p style="margin:6px 0">'+esc(x.fault.description)+'</p><div class="hint">'+esc(x.fault.reportedBy)+' · '+dhm(x.fault.reportedAt)+'</div>'+
+(x.fault.photos.length?'<div id="jf_ph" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+x.fault.photos.map(function(p){ return '<button class="btn sm" data-ph="'+esc(p)+'">View photo</button>'; }).join('')+'</div>':'')+'</div>':'')+
+(j.notes&&!x.fault?'<p style="margin-top:0">'+esc(j.notes)+'</p>':'')+
+'<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>Checklist</h2><span class="chip '+(left?'amb':'grn')+'">'+(j.steps.length-left)+'/'+j.steps.length+'</span></div>'+
+(j.steps.length?'<ul class="list">'+j.steps.map(function(s,i){ return '<li><label class="check" style="flex:1;margin:0"><input type="checkbox" data-st="'+i+'"'+(s.done?' checked':'')+(open?'':' disabled')+'> <span><span class="t">'+esc(s.label)+'</span>'+(s.done?'<br><span class="s hint">'+esc(s.by)+' · '+dhm(s.at)+'</span>':'')+'</span></label></li>'; }).join('')+'</ul>':'<p class="pad hint">No steps on this job.</p>')+
+(open?'<div class="pad" style="display:flex;gap:8px;border-top:1px solid var(--line)"><input class="inp" id="js_add" placeholder="Add a step" style="flex:1"><button class="btn sm" id="js_addgo">Add</button></div>':'')+'</div>'+
+'<form class="form" style="padding:0" id="jsf"><label class="f">Status<select class="inp" id="js_s"'+(open?'':' disabled')+'>'+mopt(x.statuses,j.status)+'</select></label><label class="f">Priority<select class="inp" id="js_p"'+(open?'':' disabled')+'>'+mopt(['Urgent','High','Normal','Low'],j.priority)+'</select></label>'+
+'<label class="f">Assigned to<select class="inp" id="js_a"'+(open?'':' disabled')+'><option value="">Anyone in the garage</option>'+x.mechanics.map(function(s){ return '<option value="'+esc(s.id)+'"'+(s.id===j.assignedTo?' selected':'')+'>'+esc(s.name)+'</option>'; }).join('')+'</select></label>'+
+'<label class="f">Time spent (minutes)<input class="inp num" id="js_m" inputmode="numeric" value="'+esc(j.minutes||'')+'"'+(open?'':' disabled')+'></label>'+
+'<label class="f wide">Parts used<input class="inp" id="js_pt" value="'+esc(j.parts||'')+'" placeholder="Part, quantity"'+(open?'':' disabled')+'></label>'+
+'<label class="f wide">Mechanic notes<textarea class="inp" rows="2" id="js_n"'+(open?'':' disabled')+'>'+esc(x.fault?'':j.notes||'')+'</textarea></label>'+
+(open&&x.kart&&x.kart.status!=='In service'?'<label class="check wide"><input type="checkbox" id="js_bis" checked> Put kart '+esc(x.kart.number)+' back in service when I sign this off</label>':'')+
+(open&&x.fault?'<label class="check wide"><input type="checkbox" id="js_nf"> No fault found</label>':'')+
+'<div class="wide" id="jsmsg"></div></form></div>'+
+(open?'<div class="sheet-f" style="gap:8px"><button class="btn" id="js_save">Save</button><button class="btn pri" id="js_done">Sign off as done</button></div>':'')+'</div>'), el=sh.el;
+var reopen=function(r){ sh.close(); go(r); if(S.view==='garage') VIEWS.garage(); };
+el.querySelectorAll('[data-st]').forEach(function(c){ c.onchange=function(){ c.disabled=true; call('jobStep',{id:j.id, index:Number(c.dataset.st), done:c.checked}).then(reopen).catch(function(e){ toast(e.message); c.disabled=false; }); }; });
+var add=$('#js_addgo',el); if(add) add.onclick=function(){ var v=$('#js_add',el).value.trim(); if(!v) return; call('jobStep',{id:j.id, add:v}).then(reopen).catch(function(e){ toast(e.message); }); };
+el.querySelectorAll('[data-ph]').forEach(function(b){ b.onclick=function(){ b.disabled=true; call('kartPhoto',{jobId:j.id, id:b.dataset.ph}).then(function(r){ var w=document.createElement('div'); w.innerHTML='<img src="'+r.data+'" style="max-width:100%;border-radius:10px;margin-top:8px">'; b.replaceWith(w); }).catch(function(e){ toast(e.message); b.disabled=false; }); }; });
+var val=function(id){ var e=$('#'+id,el); return e?e.value:undefined; }, chk=function(id){ var e=$('#'+id,el); return !!(e&&e.checked); };
+var send=function(status, force){ var p={id:j.id, status:status, priority:val('js_p'), assignedTo:val('js_a'), minutes:val('js_m'), parts:val('js_pt'), backInService:chk('js_bis'), noFault:chk('js_nf'), force:force};
+if(!x.fault) p.notes=val('js_n'); else if(val('js_n')) p.notes=j.notes+'\nMechanic: '+val('js_n');
+return call('jobStatus',p).then(function(r){ toast(status==='Done'?j.ref+' signed off'+(p.backInService?'. Kart back in service':''):'Saved'); reopen(r); })
+.catch(function(e){ if(/not ticked off/.test(e.message)&&confirm(e.message+'\n\nSign it off anyway?')) return send(status,true); $('#jsmsg',el).innerHTML=errBox(e); }); };
+var sv=$('#js_save',el); if(sv) sv.onclick=function(){ send(val('js_s')); };
+var dn=$('#js_done',el); if(dn) dn.onclick=function(){ send('Done'); };
+};
+if (pre) go(pre); else call('jobFile',{id:id}).then(go).catch(function(e){ toast(e.message); });
+}
+function templateSheet(d, t){
+t=t||{steps:[]};
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:620px"><div class="sheet-h"><div><div class="eyebrow">Job card template</div><h2>'+(t.id?esc(t.name):'New template')+'</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="tpf"><label class="f wide">Name<input class="inp" id="tp_n" required value="'+esc(t.name||'')+'" placeholder="For example 10 hour service"></label>'+
+'<label class="f wide">Steps, one per line<textarea class="inp" rows="10" id="tp_s" required placeholder="Check brake pads and discs\nCheck brake fluid level\nCheck steering track rod ends and bolts\nCheck throttle return\nCheck seat and seat belt\nCheck bumpers and fixings\nCheck tyre pressures and wear\nTest drive">'+esc(t.steps.map(function(s){ return s.label; }).join('\n'))+'</textarea></label>'+
+'<label class="f">Time it should take (minutes)<input class="inp num" id="tp_m" inputmode="numeric" value="'+esc(t.estMins||'')+'"></label><div class="wide" id="tpmsg"></div></form>'+
+'<div class="sheet-f" style="gap:8px">'+(t.id?'<button class="btn" id="tp_del">Remove</button>':'')+'<button class="btn pri" id="tpgo">Save template</button></div></div>'), el=sh.el;
+var done=function(r){ sh.close(); toast('Saved'); S.data.garage=r; gRefresh(r); };
+$('#tpgo',el).onclick=function(){ if(!$('#tpf',el).reportValidity()) return; call('templateSave',{id:t.id, name:$('#tp_n',el).value, steps:$('#tp_s',el).value.split('\n'), estMins:$('#tp_m',el).value}).then(done).catch(function(e){ $('#tpmsg',el).innerHTML=errBox(e); }); };
+var del=$('#tp_del',el); if(del) del.onclick=function(){ if(confirm('Remove this template? Job cards already made from it are kept.')) call('templateSave',{id:t.id, remove:true}).then(done).catch(function(e){ toast(e.message); }); };
+}
+function ruleSheet(d, r){
+r=r||{appliesTo:'All', priority:'High', active:true};
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:620px"><div class="sheet-h"><div><div class="eyebrow">Service schedule</div><h2>'+(r.id?esc(r.name):'New service')+'</h2><p class="hint" style="margin:4px 0 0">Fill in one or more. Whichever the kart reaches first raises the job card.</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="rlf"><label class="f wide">Service<input class="inp" id="rl_n" required value="'+esc(r.name||'')+'" placeholder="For example brake and steering check"></label>'+
+'<label class="f">Every (running hours)<input class="inp num" id="rl_h" inputmode="decimal" value="'+esc(r.everyHours||'')+'"></label><label class="f">Every (laps)<input class="inp num" id="rl_l" inputmode="numeric" value="'+esc(r.everyLaps||'')+'"></label>'+
+'<label class="f">Every (days)<input class="inp num" id="rl_d" inputmode="numeric" value="'+esc(r.everyDays||'')+'"></label><label class="f">Which karts<select class="inp" id="rl_a">'+mopt(['All'].concat(d.types),r.appliesTo)+'</select></label>'+
+'<label class="f">Job card template<select class="inp" id="rl_t"><option value="">None</option>'+d.templates.map(function(t){ return '<option value="'+esc(t.id)+'"'+(t.id===r.templateId?' selected':'')+'>'+esc(t.name)+'</option>'; }).join('')+'</select></label>'+
+'<label class="f">Priority<select class="inp" id="rl_p">'+mopt(['High','Normal','Urgent'],r.priority)+'</select></label>'+
+'<label class="check wide"><input type="checkbox" id="rl_on"'+(r.active?' checked':'')+'> Active</label><div class="wide" id="rlmsg"></div></form>'+
+'<div class="sheet-f" style="gap:8px">'+(r.id?'<button class="btn" id="rl_del">Remove</button>':'')+'<button class="btn pri" id="rlgo">Save</button></div></div>'), el=sh.el;
+var done=function(x){ sh.close(); toast('Saved'); S.data.garage=x; gRefresh(x); };
+var v=function(id){ return $('#'+id,el).value; };
+$('#rlgo',el).onclick=function(){ if(!$('#rlf',el).reportValidity()) return; call('ruleSave',{id:r.id, name:v('rl_n'), everyHours:v('rl_h'), everyLaps:v('rl_l'), everyDays:v('rl_d'), appliesTo:v('rl_a'), templateId:v('rl_t'), priority:v('rl_p'), active:$('#rl_on',el).checked}).then(done).catch(function(e){ $('#rlmsg',el).innerHTML=errBox(e); }); };
+var del=$('#rl_del',el); if(del) del.onclick=function(){ if(confirm('Turn this service off?')) call('ruleSave',{id:r.id, remove:true}).then(done).catch(function(e){ toast(e.message); }); };
 }
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
