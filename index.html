@@ -459,7 +459,7 @@ function trainChip(st){ return st==='Valid'?'<span class="chip grn">Valid</span>
 function busy(el){ el.innerHTML = '<div class="spin" role="status" aria-label="Loading"></div>'; }
 function errBox(e){ return '<div class="err">'+esc(e && e.message || e)+'</div>'; }
 var MGR_TABS = [['dash','Dashboard'],['tasks','Tasks'],['checks','Checks'],['rota','Rota'],['staff','Staff'],['docs','Documents'],['training','Training']];
-var STAFF_TABS = [['home','Home'],['checks','Checks'],['myrota','My rota'],['mydocs','My documents'],['mytraining','My training'],['me','My details']];
+var STAFF_TABS = [['home','Home'],['checks','Checks'],['myrota','My rota and holiday'],['mydocs','My documents'],['mytraining','My training'],['me','My details']];
 function shell(){
 var tabs = navTabs();
 var cur = (S.view==='file'||S.view==='absence')?'staff':(S.view==='requests'||S.view==='timesheets')?'rota':S.view==='conduct'?'training':(S.view==='checkadmin'||S.view==='checkhistory')?'checks':S.view==='cashhistory'?'cashup':S.view;
@@ -932,19 +932,20 @@ function drawRequests(d){
 var m=$('#main');
 var pend=d.holidays.filter(function(h){ return h.status==='Pending'; }), appr=d.holidays.filter(function(h){ return h.status==='Approved'; });
 var typeTxt={Drop:'Wants to drop',Swap:'Wants to swap',Claim:'Wants to pick up'};
-m.innerHTML='<button class="link" id="back" style="margin-bottom:10px">Back to rota</button><div class="head"><div><div class="eyebrow">Holidays and shift changes</div><h1>Requests</h1><p>Staff are emailed as soon as you approve or decline.</p></div></div>'+
+m.innerHTML='<button class="link" id="back" style="margin-bottom:10px">Back to rota</button><div class="head"><div><div class="eyebrow">Holidays and shift changes</div><h1>Requests</h1><p>Staff are emailed as soon as you approve or decline. To book your own time off, use My rota and holiday.</p></div><div class="acts"><button class="btn pri" id="myhol">Request my own time off</button></div></div>'+
 '<div class="grid g2"><div class="panel"><div class="sec-h"><h2>Holiday requests</h2><span class="chip '+(pend.length?'red':'grn')+'">'+pend.length+'</span></div>'+
 (pend.length?'<ul class="list">'+pend.map(function(h){ var a=h.allowance||{};
 return '<li class="req"><div class="grow"><div class="t">'+esc(h.name)+' <span class="hint">'+esc(h.jobRole)+'</span></div><div class="s num">'+esc(fmtRange(h.from,h.to))+' · '+h.days+' day'+(h.days==1?'':'s')+' · '+esc(h.type)+'</div>'+
 (h.reason?'<div class="s">"'+esc(h.reason)+'"</div>':'')+'<div class="tags">'+(h.notice&&!h.notice.ok?'<span class="chip red">Short notice: '+h.notice.given+' of '+h.notice.need+' days</span>':'<span class="chip grn">Notice OK</span>')+
 (h.clashes?'<span class="chip amb">On '+h.clashes+' shift'+(h.clashes>1?'s':'')+'</span>':'')+(a.entitlement?'<span class="chip">'+a.remaining+' of '+a.entitlement+' days left</span>':'')+'</div></div>'+
-'<div class="acts2"><button class="btn sm" data-hd="'+h.id+'">Decline</button><button class="btn sm pri" data-ha="'+h.id+'">Approve</button></div></li>'; }).join('')+'</ul>':'<div class="pad hint">No holiday requests waiting.</div>')+'</div>'+
+(h.staffId===S.me.id&&S.me.access!=='Admin'?'<span class="chip">Your request. Another manager approves it</span></li>':'<div class="acts2"><button class="btn sm" data-hd="'+h.id+'">Decline</button><button class="btn sm pri" data-ha="'+h.id+'">Approve</button></div></li>'); }).join('')+'</ul>':'<div class="pad hint">No holiday requests waiting.</div>')+'</div>'+
 '<div class="panel"><div class="sec-h"><h2>Shift swaps and drops</h2><span class="chip '+(d.requests.length?'red':'grn')+'">'+d.requests.length+'</span></div>'+
 (d.requests.length?'<ul class="list">'+d.requests.map(function(r){
 return '<li class="req"><div class="grow"><div class="t">'+esc(r.name)+'</div><div class="s">'+typeTxt[r.type]+(r.type==='Swap'?' with <b>'+esc(r.swapName)+'</b>':'')+'</div><div class="s num">'+(r.shift?esc(dayName(r.shift.date,true)+', '+r.shift.start+' to '+r.shift.end+(r.shift.role?' · '+r.shift.role:'')):'Shift removed')+'</div>'+(r.note?'<div class="s">"'+esc(r.note)+'"</div>':'')+'</div>'+
 '<div class="acts2"><button class="btn sm" data-rd="'+r.id+'">Decline</button><button class="btn sm pri" data-ra="'+r.id+'">Approve</button></div></li>'; }).join('')+'</ul>':'<div class="pad hint">No shift requests waiting.</div>')+'</div></div>'+
 '<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Coming up: approved holidays</h2></div>'+(appr.length?'<ul class="list">'+appr.map(function(h){ return '<li><span class="dot grn"></span><div class="grow"><div class="t">'+esc(h.name)+'</div><div class="s num">'+esc(fmtRange(h.from,h.to))+' · '+h.days+' day'+(h.days==1?'':'s')+'</div></div>'+(h.clashes?'<span class="chip red">Still on '+h.clashes+' shift'+(h.clashes>1?'s':'')+'</span>':'')+'</li>'; }).join('')+'</ul>':'<div class="pad hint">No approved holidays coming up.</div>')+'</div>';
 $('#back').onclick=function(){ go('rota'); };
+$('#myhol').onclick=function(){ go('myrota'); };
 var act=function(sel, action, approve){ m.querySelectorAll(sel).forEach(function(b){ b.onclick=function(){ var id=b.dataset[Object.keys(b.dataset)[0]]; b.disabled=true;
 var note = !approve && action==='decideHoliday' ? (window.prompt('Reason for declining (included in their email, optional)')||'') : '';
 call(action,{id:id, approve:approve, note:note}).then(function(r){ toast(approve?'Approved, they have been emailed':'Declined, they have been emailed'); drawRequests(r); }).catch(function(e){ toast(e.message); b.disabled=false; }); }; }); };
@@ -2004,7 +2005,7 @@ if(hasMod('staff')) t.push(['staff','Staff']); else if(hasMod('absence')) t.push
 add('contracts','Contracts','contracts');
 add('docs','Documents','docs'); if(hasMod('training')) t.push(['training','Training']); else if(hasMod('conduct')) t.push(['conduct','Conduct']);
 add('money','Money','money'); if(hasMod('admin')) t.push(['access','Access']);
-if(isMgr()) t.push(['home','My portal']); else t=t.concat([['myrota','My rota'],['mydocs','My documents'],['mytraining','My training'],['me','My details']]);
+if(isMgr()) t.push(['home','My portal'],['myrota','My rota and holiday']); else t=t.concat([['myrota','My rota and holiday'],['mydocs','My documents'],['mytraining','My training'],['me','My details']]);
 return t;
 }
 function modChips(ids, all){ if(!ids.length) return '<span class="hint">Only their own things</span>'; return '<div class="modchips">'+ids.map(function(id){ var m=all.filter(function(x){ return x.id===id; })[0]; return '<span class="chip">'+esc(m?m.name:id)+'</span>'; }).join('')+'</div>'; }
