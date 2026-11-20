@@ -447,7 +447,7 @@ function initials(n){ return String(n||'?').split(' ').map(function(x){return x[
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function hasMod(m){ return !!(S.me && (S.me.modules||[]).indexOf(m)>=0); }
 function isMgr(){ return hasMod('dashboard'); }
-var VIEW_MOD={garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
+var VIEW_MOD={moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
 function canView(v){ return !!VIEWS[v] && (!VIEW_MOD[v] || hasMod(VIEW_MOD[v])); }
 function stateChip(st, dueSoon){
 if (st==='Signed') return dueSoon ? '<span class="chip amb">Re-sign soon</span>' : '<span class="chip grn">Signed</span>';
@@ -549,14 +549,14 @@ var q = ($('#q').value||'').toLowerCase(), pastTab = S.staffTab==='past';
 var src = (pastTab?past:cur).filter(function(s){ return !q || (s.name+' '+s.jobRole).toLowerCase().indexOf(q)>=0; });
 $('#thd').innerHTML = pastTab ? '<tr><th>Name</th><th>Role</th><th>Last day</th><th>Reason</th><th>Would re-employ</th></tr>' : '<tr><th>Name</th><th>Role</th><th>Status</th><th>Documents</th><th>Training</th><th>Right to work</th></tr>';
 if (pastTab) { $('#rows').innerHTML = src.length ? src.sort(function(a,b){ return a.leftDate<b.leftDate?1:-1; }).map(function(s){
-return '<tr class="click" data-open="'+s.id+'"><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:28px;height:28px;font-size:12px;opacity:.6">'+initials(s.name)+'</div><div><b>'+esc(s.name)+'</b><div class="hint">'+esc(s.email)+'</div></div></div></td>'+
+return '<tr class="click" data-open="'+s.id+'"><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:28px;height:28px;font-size:12px;opacity:.6">'+initials(s.name)+'</div><div><b>'+esc(s.name)+'</b>'+dupChip(s)+'<div class="hint">'+esc(s.email)+'</div></div></div></td>'+
 '<td>'+esc(s.jobRole)+'<div class="hint">'+esc(s.company)+'</div></td><td class="num">'+(s.leftDate?fmt(s.leftDate):'<span class="hint">Not recorded</span>')+'</td><td>'+esc(s.leaveReason||'')+'</td><td>'+(s.rehire==='Yes'?'<span class="chip grn">Yes</span>':s.rehire==='No'?'<span class="chip red">No</span>':'<span class="hint">Not recorded</span>')+'</td></tr>'; }).join('')
 : '<tr><td colspan="5" class="hint" style="padding:16px">No past employees.</td></tr>';
 m.querySelectorAll('[data-open]').forEach(function(r){ r.onclick=function(){ openFile(r.dataset.open); }; }); return; }
 $('#rows').innerHTML = src.map(function(s){
 var pct = s.docsTotal ? Math.round(s.docsSigned/s.docsTotal*100) : 0;
 var st = s.status==='Active'?'<span class="chip grn">Active</span>':s.status==='Invited'?'<span class="chip gold">'+(s.needsCheck?'Signing up':'Invited')+'</span>':s.status==='Awaiting approval'?'<span class="chip red">To accept</span>':'<span class="chip">'+esc(s.status)+'</span>';
-return '<tr class="click" data-open="'+s.id+'"><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:28px;height:28px;font-size:12px">'+initials(s.name)+'</div><div><b>'+esc(s.name)+'</b>'+(s.under18?' <span class="chip amb">Under 18</span>':'')+(s.needsCheck&&s.status==='Active'?' <span class="chip amb">Check role and pay</span>':'')+'<div class="hint">'+esc(s.email)+'</div></div></div></td>'+
+return '<tr class="click" data-open="'+s.id+'"><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:28px;height:28px;font-size:12px">'+initials(s.name)+'</div><div><b>'+esc(s.name)+'</b>'+(s.under18?' <span class="chip amb">Under 18</span>':'')+dupChip(s)+(s.needsCheck&&s.status==='Active'?' <span class="chip amb">Check role and pay</span>':'')+'<div class="hint">'+esc(s.email)+'</div></div></div></td>'+
 '<td>'+esc(s.jobRole)+(s.level&&s.level!=='Team Member'&&s.level!==s.jobRole?' <span class="chip">'+esc(s.level)+'</span>':'')+'<div class="hint">'+esc(s.company)+'</div></td><td>'+st+'</td>'+
 '<td>'+(s.status==='Active'?'<div class="num" style="font-size:13px">'+s.docsSigned+' of '+s.docsTotal+'</div><div class="bar '+(pct===100?'full':'')+'"><i style="width:'+pct+'%"></i></div>':'<span class="hint">After onboarding</span>')+'</td>'+
 '<td>'+(s.trainingAlerts?'<span class="chip red">'+s.trainingAlerts+' to book</span>':'<span class="chip grn">In date</span>')+'</td>'+
@@ -606,7 +606,7 @@ var signed = d.docs.filter(function(x){return x.state==='Signed';}).length;
 var opt = function(arr,v){ return arr.map(function(o){ return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>'; }).join(''); };
 m.innerHTML = '<button class="link" id="back" style="margin-bottom:10px">Back to staff</button>'+
 '<div class="head"><div style="display:flex;gap:14px;align-items:center"><div class="av" style="width:52px;height:52px;font-size:20px">'+initials(name)+'</div><div><div class="eyebrow">'+esc(s.company)+' · '+esc(s.id)+'</div><h1>'+esc(name)+'</h1><p>'+esc(s.jobRole)+' · '+esc(s.access)+(s.startDate?' · Started '+fmt(s.startDate):'')+'</p></div></div>'+
-'<div class="acts"><button class="btn" id="conductbtn">Conduct record</button>'+(s.status==='Left'?'<button class="btn" id="reinstate">Reinstate</button>':(s.status==='Invited'?'<button class="btn" id="resend">Resend invite</button>':'<button class="btn" id="remind" '+(signed===d.docs.length?'disabled':'')+'>Remind to sign</button>')+'<button class="btn" id="leaver" style="color:var(--red)">Mark as leaver</button>')+'</div></div>'+
+'<div class="acts"><button class="btn" id="conductbtn">Conduct record</button>'+(s.status==='Left'?'<button class="btn" id="reinstate">Reinstate</button>':(s.status==='Invited'?'<button class="btn" id="resend">Resend invite</button>':'<button class="btn" id="remind" '+(signed===d.docs.length?'disabled':'')+'>Remind to sign</button>')+'<button class="btn" id="leaver" style="color:var(--red)">Mark as leaver</button>')+(S.me.access==='Admin'&&S.me.id!==s.id?'<button class="btn" id="delstaff" style="color:var(--red)">'+(s.status==='Invited'?'Cancel invite':'Delete')+'</button>':'')+'</div></div>'+
 (s.status==='Left'?'<div class="panel pad leaver-band"><div><div class="eyebrow" style="color:var(--red)">Past employee</div><b>Left '+(s.leftDate?fmt(s.leftDate):'(date not recorded)')+'</b>'+(s.leaveReason?' · '+esc(s.leaveReason):'')+(s.rehire?' · Would re-employ: '+esc(s.rehire):'')+
 '<div class="hint">'+(s.leftBy?'Recorded by '+esc(s.leftBy)+'. ':'')+(s.kitReturned?'Returned: '+esc(s.kitReturned)+'. ':'')+'Portal access ended. Keep this file until '+(s.leftDate?fmt(addMonthsIso(s.leftDate,72)):'6 years after they left')+'.</div>'+(s.leaverNotes?'<p style="margin:6px 0 0;white-space:pre-wrap">'+esc(s.leaverNotes)+'</p>':'')+'</div></div>':'')+
 '<div class="grid g2">'+
@@ -653,6 +653,7 @@ call('saveStaff',p).then(function(r){ toast('Saved'); drawFile(r); }).catch(func
 };
 if ($('#remind')) $('#remind').onclick = function(){ call('remindDocs',{id:s.id}).then(function(){ toast('Reminder emailed to '+s.firstName); }); };
 if ($('#leaver')) $('#leaver').onclick = function(){ leaverSheet(s); };
+if ($('#delstaff')) $('#delstaff').onclick = function(){ deleteStaffSheet(s); };
 if ($('#reinstate')) $('#reinstate').onclick = function(){ if(!confirmBox('Reinstate '+s.firstName+'? They become an active member of staff again and can sign in.')) return; call('reinstateStaff',{id:s.id}).then(function(r){ toast(s.firstName+' reinstated'); drawFile(r); }).catch(function(e){ toast(e.message); }); };
 if ($('#resend')) $('#resend').onclick = function(){ call('resendInvite',{id:s.id}).then(function(r){ if(r.emailed===false) window.prompt('The email did not send. Copy this link and send it to them yourself:', r.link); else toast('New invite emailed'); S.fileId=r.id; VIEWS.file(); }).catch(function(e){ toast(e.message); }); };
 $('#tf').onsubmit = function(e){ e.preventDefault(); var send=function(cert){ call('addTraining',{staffId:s.id, typeId:$('#t_type').value, completed:$('#t_date').value, notes:$('#t_notes').value, cert:cert||''}).then(function(){ toast('Training recorded'); VIEWS.file(); }).catch(function(e){ toast(e.message); }); }; var f=$('#t_cert').files[0]; if(f) readPick(f, send); else send(''); };
@@ -780,7 +781,7 @@ call('updateMyDetails',p).then(function(r){ S.me=r; toast('Details saved'); VIEW
 };
 };
 var ROLE_COL = {'Track Marshal':'#c8961e','Reception':'#2f7dd1','Race Director':'#d22a2f','Duty Manager':'#16150f','Events Host':'#8a4fd1','Mechanic':'#1d7a46','Track Maintenance':'#b86e00','Cleaner':'#6b6860'};
-var PRESETS = [['09:00','17:00'],['10:00','18:00'],['12:00','20:00'],['16:00','22:00'],['17:00','23:00']];
+var PRESETS = [['11:00','22:00'],['08:00','22:00'],['08:00','15:00'],['15:00','22:00'],['11:00','17:00']];
 function pYmd(s){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s); return new Date(+m[1],+m[2]-1,+m[3]); }
 function toYmd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function addD(s,n){ var d=pYmd(s); d.setDate(d.getDate()+n); return toYmd(d); }
@@ -846,7 +847,7 @@ return '<td class="'+cls+'"><div class="rc-in">'+inner+'<button class="add" data
 };
 m.innerHTML = rotaTop(d,'week')+
 '<div class="board rboard"><div class="hi"><b class="num">'+hrs(d.totals.hours)+'</b><span>Rota hours</span></div><div><b class="num">'+money(d.totals.cost)+'</b><span>Labour cost</span></div><div><b class="num">'+d.totals.shifts+'</b><span>Shifts</span></div><div class="'+(d.totals.open?'warn':'')+'"><b class="num">'+d.totals.open+'</b><span>Open shifts</span></div><div class="'+(warnCount?'warn':'')+'"><b class="num">'+warnCount+'</b><span>Clashes to check</span></div></div>'+
-'<div class="toolbar">'+st+'<span class="hint rhint">Tap a space to add a shift. Dashed shifts are drafts.</span><div class="acts"><button class="btn" id="rcopy">Copy last week</button><button class="btn pri" id="rpub">'+(d.status==='Published'?'Publish again':'Publish and email staff')+'</button></div></div>'+
+'<div class="toolbar">'+st+'<span class="hint rhint">Tap a space to add a shift. Dashed shifts are drafts.</span><div class="acts"><span class="hint" id="rsaved" style="align-self:center">Changes save as you go</span><button class="btn" id="rsave">Save draft</button><button class="btn" id="rpdf">Save as PDF</button><button class="btn" id="rcopy">Copy last week</button><button class="btn pri" id="rpub">'+(d.status==='Published'?'Publish again':'Publish and email staff')+'</button></div></div>'+
 '<div class="panel rota-wrap"><table class="rota"><thead><tr><th class="who-h">Team</th>'+d.days.map(function(day){ return '<th class="'+(day===today?'today':'')+'"><span>'+dayName(day)+'</span><b class="num">'+dayNum(day)+'</b></th>'; }).join('')+'</tr></thead><tbody>'+
 rows.map(function(r){
 var over = (r.contractedHours && r.hours>r.contractedHours) || r.hours>48;
@@ -861,6 +862,8 @@ m.querySelectorAll('[data-shift]').forEach(function(b){ b.onclick=function(){ sh
 $('#rcopy').onclick=function(){ var b=this; b.disabled=true; call('copyWeek',{weekStart:d.weekStart, company:d.company}).then(function(r){ toast('Copied last week as a draft'); drawWeek(r); }).catch(function(e){
 b.disabled=false; if (/already has/.test(e.message)) { if (confirmBox(e.message+' Replace them with last week?')) call('copyWeek',{weekStart:d.weekStart, company:d.company, replace:true}).then(function(r){ toast('Week replaced with last week'); drawWeek(r); }).catch(function(e){ toast(e.message); }); } else toast(e.message); }); };
 $('#rpub').onclick=function(){ publishWeekSheet(d); };
+$('#rsave').onclick=function(){ rotaSaveDraft(d); };
+$('#rpdf').onclick=function(){ rotaPdf(d); };
 }
 function confirmBox(msg){ return window.confirm(msg); }
 function shiftSheet(s){
@@ -874,7 +877,7 @@ el.innerHTML='<div class="sheet-in" role="dialog" aria-label="Shift"><div class=
 '<div class="form"><label class="f">Date<input class="inp" type="date" id="s_date" value="'+esc(s.date)+'" required></label><label class="f">Who<select class="inp" id="s_staff">'+staffOpts+'</select></label>'+
 '<label class="f">Position<select class="inp" id="s_role"><option value="">No position</option>'+d.roles.map(function(r){ return '<option'+(r===role?' selected':'')+'>'+esc(r)+'</option>'; }).join('')+'</select></label>'+
 '<label class="f">Break (minutes)<input class="inp num" type="number" min="0" step="5" id="s_break" value="'+esc(s.breakMins||0)+'"></label>'+
-'<label class="f">Start<input class="inp num" type="time" id="s_start" value="'+esc(s.start||'09:00')+'" required></label><label class="f">Finish<input class="inp num" type="time" id="s_end" value="'+esc(s.end||'17:00')+'" required></label>'+
+'<label class="f">Start<input class="inp num" type="time" id="s_start" value="'+esc(s.start||PRESETS[0][0])+'" required></label><label class="f">Finish<input class="inp num" type="time" id="s_end" value="'+esc(s.end||PRESETS[0][1])+'" required></label>'+
 '<div class="wide chips">'+PRESETS.map(function(p){ return '<button type="button" class="chip-btn" data-p="'+p[0]+'|'+p[1]+'">'+p[0]+' to '+p[1]+'</button>'; }).join('')+'</div>'+
 '<label class="f wide">Notes for the team (optional)<input class="inp" id="s_notes" value="'+esc(s.notes||'')+'" placeholder="For example: party room, corporate group at 7pm"></label></div>'+
 '<div class="hint" id="s_len"></div><div id="smsg"></div></form>'+
@@ -1705,7 +1708,7 @@ call('cashUps',{month:S.cashMonth, company:S.cash.company}).then(drawCashHist).c
 function drawCashHist(d){
 var m=$('#main'), t=d.totals, mx=Math.max.apply(null, d.dow.map(function(x){ return x.avg; }).concat([1]));
 m.innerHTML='<button class="link" id="back" style="margin-bottom:10px">Back to today\'s cash up</button><div class="head"><div><div class="eyebrow">'+esc(d.company)+' cash ups</div><h1>'+esc(monthLabel(d.month))+'</h1><p>Tap a day to see the figures and photos, sign it off and mark the cash as banked.</p></div>'+
-'<div class="acts">'+coSelect(d,'ch_co')+'<span class="seg"><button id="chp" aria-label="Previous month">'+ICON.left+'</button><button id="chn" aria-label="Next month">'+ICON.right+'</button></span>'+(S.me.access==='Admin'?'<button class="btn" id="chtol">Tolerance '+gbp(d.tolerance)+'</button>':'')+'</div></div>'+
+'<div class="acts">'+coSelect(d,'ch_co')+'<span class="seg"><button id="chp" aria-label="Previous month">'+ICON.left+'</button><button id="chn" aria-label="Next month">'+ICON.right+'</button></span>'+(S.me.access==='Admin'?'<button class="btn" id="chtol">Tolerance '+gbp(d.tolerance)+'</button><button class="btn" id="cheod">End of day emails</button>':'')+'<button class="btn" id="chrep">Reports</button>'+'</div></div>'+
 '<div class="board"><div class="hi"><b class="num">'+gbp0(t.takings)+'</b><span>End of day totals</span></div><div><b class="num">'+gbp0(t.tk)+'</b><span>TeamKarting</span></div><div><b class="num">'+gbp0(t.cafe)+'</b><span>Cafe</span></div>'+
 '<div class="'+(Math.abs(t.disc)>d.tolerance?'warn':'')+'"><b class="num">'+sgn(t.disc)+'</b><span>Net discrepancy</span></div><div><b class="num">'+gbp0(t.upsales)+'</b><span>Upsales</span></div><div class="'+(t.notBanked?'warn':'')+'"><b class="num">'+gbp0(t.onSite)+'</b><span>Waiting to be banked</span></div><div class="'+(t.unsigned?'warn':'')+'"><b class="num">'+t.unsigned+'</b><span>Not signed off</span></div></div>'+
 '<div class="panel" style="margin-bottom:14px">'+(d.list.length?'<div class="tbl-wrap"><table><thead><tr><th>Day</th><th>End of day</th><th>TK</th><th>Cafe</th><th>Discrepancy</th><th>Banked</th><th>Status</th></tr></thead><tbody>'+
@@ -1717,6 +1720,8 @@ d.list.map(function(c){ return '<tr class="click" data-c="'+c.id+'"><td><b>'+esc
 $('#back').onclick=function(){ go('cashup'); };
 $('#chp').onclick=function(){ S.cashMonth=addMonth(d.month,-1); VIEWS.cashhistory(); }; $('#chn').onclick=function(){ S.cashMonth=addMonth(d.month,1); VIEWS.cashhistory(); };
 if ($('#ch_co')) $('#ch_co').onchange=function(){ S.cash.company=this.value; VIEWS.cashhistory(); };
+if ($('#cheod')) $('#cheod').onclick=eodEmailsPrompt;
+if ($('#chrep')) $('#chrep').onclick=function(){ go('moneyreport'); };
 if ($('#chtol')) $('#chtol').onclick=function(){ var v=window.prompt('Flag discrepancies over how many pounds?', d.tolerance); if(v===null) return; call('cashSettings',{tolerance:v}).then(function(){ toast('Saved'); VIEWS.cashhistory(); }).catch(function(e){ toast(e.message); }); };
 m.querySelectorAll('[data-c]').forEach(function(r){ r.onclick=function(){ cashSheet(d.list.filter(function(c){ return c.id===r.dataset.c; })[0]); }; });
 }
@@ -1749,7 +1754,7 @@ function drawMoney(d){
 S.money.company=d.company; S.data.money=d; var m=$('#main'), cur=d.month===d.today.slice(0,7), past=d.month<d.today.slice(0,7);
 var unpaid=d.due.filter(function(b){ return !b.paid; });
 m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+' · '+esc(d.seeText)+'</div><h1>Money, '+esc(monthLabel(d.month))+'</h1><p>Takings from the cash ups, wages from the clock and pay rates, costs from bills and spend logged here. A management view, not the accounts.</p></div>'+
-'<div class="acts">'+coSelect(d,'mo_co')+'<span class="seg"><button id="mop" aria-label="Previous month">'+ICON.left+'</button><button id="mon" aria-label="Next month">'+ICON.right+'</button></span><button class="btn" id="mobill">Add a bill</button><button class="btn pri" id="mospend">Log spend</button></div></div>'+
+'<div class="acts">'+coSelect(d,'mo_co')+'<span class="seg"><button id="mop" aria-label="Previous month">'+ICON.left+'</button><button id="mon" aria-label="Next month">'+ICON.right+'</button></span><button class="btn" id="morep">Reports</button><button class="btn" id="mobill">Add a bill</button><button class="btn pri" id="mospend">Log spend</button></div></div>'+
 '<div class="board"><div class="hi"><b class="num">'+gbp0(d.revenue.total)+'</b><span>Takings'+(cur?' so far':'')+'</span></div><div><b class="num">'+gbp0(d.wages.pay)+'</b><span>Wages, '+d.wageShare+'% of takings</span></div><div><b class="num">'+gbp0(d.spent)+'</b><span>Costs paid</span></div>'+
 '<div class="'+(d.profit<0?'warn':'')+'"><b class="num">'+gbp0(d.profit)+'</b><span>Profit'+(cur?' so far':'')+'</span></div><div class="'+(unpaid.length?'warn':'')+'"><b class="num">'+unpaid.length+'</b><span>Bills to pay</span></div></div>'+
 (past?'':'<div class="eyebrow" style="margin:0 0 6px">Forecast for the full month</div><div class="mo-fc"><div><span>Takings</span><b>'+gbp0(d.forecast.revenue)+'</b></div><div><span>Wages</span><b>'+gbp0(d.forecast.wages)+'</b></div><div><span>Costs</span><b>'+gbp0(d.forecast.costs)+'</b></div><div><span>Profit</span><b style="color:'+(d.forecast.profit<0?'var(--red)':'var(--green)')+'">'+gbp0(d.forecast.profit)+'</b></div></div>'+
@@ -1764,7 +1769,7 @@ d.spend.map(function(s){ return '<tr><td class="num">'+dayNum(s.date)+' '+esc(da
 '<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Regular bills</h2><span class="hint">You and the Money team get an email before each one is due</span></div>'+(d.bills.length?'<ul class="list">'+d.bills.map(function(b){ return '<li class="click" data-bill="'+b.id+'"><div class="grow"><div class="t">'+esc(b.name)+' <span class="num">'+gbp(b.amount)+'</span></div><div class="s">'+esc(b.repeat)+(b.supplier?' · '+esc(b.supplier):'')+' · next '+fmt(b.nextDue)+(b.directDebit?' · Direct debit':'')+'</div></div><span class="chip">'+esc(b.category)+'</span></li>'; }).join('')+'</ul>':'<div class="pad hint">No bills yet.</div>')+'</div>';
 $('#mop').onclick=function(){ S.money.month=addMonth(d.month,-1); VIEWS.money(); }; $('#mon').onclick=function(){ S.money.month=addMonth(d.month,1); VIEWS.money(); };
 if ($('#mo_co')) $('#mo_co').onchange=function(){ S.money.company=this.value; VIEWS.money(); };
-$('#mospend').onclick=function(){ spendSheet(d, null); }; $('#mobill').onclick=function(){ billSheet(d, null); }; $('#mobud').onclick=function(){ budgetSheet(d, ''); };
+$('#mospend').onclick=function(){ spendSheet(d, null); }; $('#mobill').onclick=function(){ billSheet(d, null); }; $('#morep').onclick=function(){ go('moneyreport'); }; $('#mobud').onclick=function(){ budgetSheet(d, ''); };
 m.querySelectorAll('[data-cat]').forEach(function(r){ r.onclick=function(){ budgetSheet(d, r.dataset.cat); }; });
 m.querySelectorAll('[data-sp]').forEach(function(b){ b.onclick=function(){ spendSheet(d, d.spend.filter(function(s){ return s.id===b.dataset.sp; })[0]); }; });
 m.querySelectorAll('[data-rc]').forEach(function(b){ b.onclick=function(){ showData('receipt',{id:b.dataset.rc}); }; });
@@ -2474,6 +2479,181 @@ var done=function(x){ sh.close(); toast('Saved'); S.data.garage=x; gRefresh(x); 
 var v=function(id){ return $('#'+id,el).value; };
 $('#rlgo',el).onclick=function(){ if(!$('#rlf',el).reportValidity()) return; call('ruleSave',{id:r.id, name:v('rl_n'), everyHours:v('rl_h'), everyLaps:v('rl_l'), everyDays:v('rl_d'), appliesTo:v('rl_a'), templateId:v('rl_t'), priority:v('rl_p'), active:$('#rl_on',el).checked}).then(done).catch(function(e){ $('#rlmsg',el).innerHTML=errBox(e); }); };
 var del=$('#rl_del',el); if(del) del.onclick=function(){ if(confirm('Turn this service off?')) call('ruleSave',{id:r.id, remove:true}).then(done).catch(function(e){ toast(e.message); }); };
+}
+function dupChip(s){
+var all=S.data.staff||[], nm=function(x){ return String(x.name||'').toLowerCase().replace(/\s+/g,' ').trim(); };
+return all.some(function(x){ return x.id!==s.id && (nm(x)===nm(s) || String(x.email).toLowerCase()===String(s.email).toLowerCase()); })?' <span class="chip red">Possible duplicate</span>':'';
+}
+function deleteStaffSheet(s){
+call('deleteStaffPreview',{id:s.id}).then(function(d){
+var inv=d.status==='Invited', li=function(a){ return '<ul style="margin:6px 0 0;padding-left:18px">'+a.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>'; };
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:560px"><div class="sheet-h"><div><div class="eyebrow">'+esc(d.status)+'</div><h2>'+(inv?'Cancel invite':'Delete')+' '+esc(d.name)+'</h2><p class="hint" style="margin:4px 0 0">'+esc(d.email)+'</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<div class="sheet-b pad">'+
+(d.duplicates.length?'<div class="panel pad" style="margin-bottom:12px"><b>Other records for this person</b>'+li(d.duplicates.map(function(x){ return x.name+' · '+x.email+' · '+x.status; }))+'<p class="hint" style="margin:8px 0 0">Keep the one they actually use and delete the other.</p></div>':'')+
+(inv&&!d.history?'<p style="margin-top:0">This removes the invite and the record. The link they were sent stops working. Nothing else is affected.</p>':
+'<p style="margin-top:0"><b>This cannot be undone.</b> Use this for duplicates, test records and mistakes. If they worked here and have left, use <b>Mark as leaver</b> instead so the records are kept for 6 years.</p>'+
+(d.remove.length?'<p style="margin:10px 0 0">Deleted with the record:</p>'+li(d.remove):'')+
+(d.keep.length?'<p style="margin:10px 0 0">Kept, because they are business records:</p>'+li(d.keep):'')+
+(d.history?'<label class="f" style="margin-top:14px">Type DELETE to confirm<input class="inp" id="dl_c" autocomplete="off"></label>':''))+
+'<div id="dlmsg"></div></div><div class="sheet-f"><button class="btn pri" id="dlgo" style="background:var(--red);border-color:var(--red)">'+(inv?'Cancel invite':'Delete record')+'</button></div></div>'), el=sh.el;
+$('#dlgo',el).onclick=function(){ var b=this, c=$('#dl_c',el);
+if (c && c.value.trim().toUpperCase()!=='DELETE'){ $('#dlmsg',el).innerHTML=errBox({message:'Type DELETE to confirm.'}); return; }
+if (!c && !confirmBox((inv?'Cancel the invite for ':'Delete ')+d.name+'?')) return;
+b.disabled=true;
+call('deleteStaff',{id:d.id, confirm:c?c.value:''}).then(function(r){ sh.close(); toast(r.deleted+(inv?': invite cancelled':' deleted')+(r.folder?'. '+r.folder:'')); S.fileId=null; go('staff'); })
+.catch(function(e){ $('#dlmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}).catch(function(e){ toast(e.message); });
+}
+function eodEmailsPrompt(){
+call('eodSettings',{}).then(function(r){
+var v=window.prompt('Who gets the end of day report each night? Separate email addresses with commas. Leave it empty to turn it off.', r.emails.join(', '));
+if (v===null) return;
+call('eodSettings',{emails:v}).then(function(x){ toast(x.emails.length?'End of day report goes to '+x.emails.join(', '):'End of day report turned off'); }).catch(function(e){ toast(e.message); });
+}).catch(function(e){ toast(e.message); });
+}
+function rotaSaveDraft(d){
+var b=$('#rsave'); if(b) b.disabled=true;
+call('rotaWeek',{weekStart:d.weekStart, company:d.company}).then(function(r){
+var t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+toast('Saved at '+t+'. '+r.totals.shifts+' shift'+(r.totals.shifts===1?'':'s')+' on this week'+(r.status==='Published'&&!r.changedSincePublish?'.':'. Staff only see it once you publish.'));
+drawWeek(r); var s=$('#rsaved'); if(s) s.textContent='All changes saved '+t;
+}).catch(function(e){ toast(e.message); if(b) b.disabled=false; });
+}
+function rotaPdf(d){
+var rows=d.staff.filter(function(s){ return d.shifts.some(function(x){ return x.staffId===s.id; }); });
+var open=d.shifts.filter(function(x){ return !x.staffId; });
+var cell=function(list){ return list.map(function(s){ return '<div class="s" style="border-left-color:'+roleCol(s.role)+'"><b>'+esc(s.start)+' to '+esc(s.end)+'</b><span>'+esc(s.role||'')+'</span>'+(s.notes?'<i>'+esc(s.notes)+'</i>':'')+'</div>'; }).join(''); };
+var head='<tr><th class="w">Team</th>'+d.days.map(function(day){ return '<th>'+dayName(day)+' '+dayNum(day)+'</th>'; }).join('')+'</tr>';
+var body=rows.map(function(r){ return '<tr><th class="w"><b>'+esc(r.name)+'</b><span>'+esc(r.jobRole)+' · '+hrs(r.hours)+'</span></th>'+d.days.map(function(day){ return '<td>'+cell(d.shifts.filter(function(s){ return s.staffId===r.id && s.date===day; }))+'</td>'; }).join('')+'</tr>'; }).join('')+
+(open.length?'<tr><th class="w"><b>Open shifts</b><span>Ask a manager</span></th>'+d.days.map(function(day){ return '<td>'+cell(open.filter(function(s){ return s.date===day; }))+'</td>'; }).join('')+'</tr>':'');
+var title=d.company+' rota, '+weekLabel(d.weekStart);
+var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;padding:14px}'+
+'h1{font-size:20px;margin:0}p.m{margin:4px 0 12px;color:#555;font-size:12px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #ccc;padding:5px;vertical-align:top;font-size:11px}thead th{background:#111;color:#fff;font-size:11px;text-align:left}'+
+'th.w{width:15%;text-align:left;background:#f4f4f4}thead th.w{background:#111}th.w b{display:block;font-size:12px}th.w span{color:#666;font-weight:normal}.s{border-left:4px solid #999;padding:2px 5px;margin:0 0 4px;background:#fafafa}.s b{display:block}.s span{color:#555}.s i{display:block;color:#777}'+
+'.bar{display:flex;gap:8px;margin-bottom:12px}.bar button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}.bar button+button{background:#fff;color:#111}@media print{.bar{display:none}body{padding:0}tr{break-inside:avoid}}</style></head><body>'+
+'<div class="bar"><button onclick="window.print()">Save as PDF or print</button><button onclick="window.close()">Close</button></div>'+
+'<h1>'+esc(title)+'</h1><p class="m">'+(d.status==='Published'?'Published'+(d.publishedAt?' '+fmt(d.publishedAt):''):'Draft, not yet published')+' · '+hrs(d.totals.hours)+' rota hours · '+d.totals.shifts+' shifts · printed '+new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</p>'+
+'<table><thead>'+head+'</thead><tbody>'+(body||'<tr><td colspan="8">No shifts on this week yet.</td></tr>')+'</tbody></table></body></html>';
+var w=window.open('','_blank');
+if (!w){ toast('Allow pop ups for the portal to save the rota as a PDF'); return; }
+w.document.open(); w.document.write(html); w.document.close();
+setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+var DRAFT_SKIP={dl_c:1, ks_n:1, js_add:1, us_t:0};
+function draftKey(root){
+if (!root) return '';
+if (root.classList && root.classList.contains('sheet')){ var h=root.querySelector('h2'); return 'tkd:'+(S.view||'')+':'+(h?h.textContent.trim().slice(0,60):'sheet'); }
+return 'tkd:'+(S.view||'')+':page';
+}
+function draftRoot(el){ return el.closest('.sheet') || (S.view==='cashup' && el.closest('#main') ? $('#main') : null); }
+function draftFields(root){ return Array.prototype.filter.call(root.querySelectorAll('input[id],textarea[id],select[id]'), function(f){ return f.type!=='password' && f.type!=='file' && f.type!=='hidden' && !DRAFT_SKIP[f.id] && !/search|^q$|filter/i.test(f.id); }); }
+function draftStore(root){
+try {
+var vals={}, any=false;
+draftFields(root).forEach(function(f){ var v=(f.type==='checkbox'||f.type==='radio')?f.checked:f.value; vals[f.id]=v; if(f.dataset.dv0!==String(v)) any=true; });
+var k=draftKey(root); if(!k) return;
+if (any) localStorage.setItem(k, JSON.stringify({at:Date.now(), vals:vals})); else localStorage.removeItem(k);
+} catch(e){}
+}
+var DRAFT_PENDING=null;
+document.addEventListener('input', function(e){ var t=e.target; if(!t||!t.id||!t.matches||!t.matches('input,textarea,select')) return; var r=draftRoot(t); if(r) draftStore(r); }, true);
+document.addEventListener('change', function(e){ var t=e.target; if(!t||!t.id||!t.matches||!t.matches('input,textarea,select')) return; var r=draftRoot(t); if(r) draftStore(r); }, true);
+document.addEventListener('click', function(e){ var b=e.target&&e.target.closest&&e.target.closest('.btn.pri, button[type=submit]'); if(!b) return; var r=draftRoot(b); if(r) DRAFT_PENDING={key:draftKey(r), at:Date.now()}; }, true);
+function draftOffer(root){
+setTimeout(function(){
+try {
+draftFields(root).forEach(function(f){ f.dataset.dv0=String((f.type==='checkbox'||f.type==='radio')?f.checked:f.value); });
+var k=draftKey(root), raw=localStorage.getItem(k); if(!raw) return;
+var dft=JSON.parse(raw); if(!dft||Date.now()-dft.at>3*86400000){ localStorage.removeItem(k); return; }
+var diff=draftFields(root).filter(function(f){ return f.id in dft.vals && String((f.type==='checkbox'||f.type==='radio')?f.checked:f.value)!==String(dft.vals[f.id]); });
+if(!diff.length || root.querySelector('.draft-bar')) return;
+var bar=document.createElement('div'); bar.className='draft-bar';
+bar.innerHTML='<span>You have unsaved changes here from '+new Date(dft.at).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})+'.</span><button class="btn sm pri" type="button">Restore them</button><button class="btn sm" type="button">Discard</button>';
+var host=root.classList.contains('sheet')?(root.querySelector('.sheet-b')||root.querySelector('.sheet-in')):root;
+host.insertBefore(bar, host.firstChild);
+var bs=bar.querySelectorAll('button');
+bs[0].onclick=function(e){ e.stopPropagation(); draftFields(root).forEach(function(f){ if(!(f.id in dft.vals)) return; if(f.type==='checkbox'||f.type==='radio') f.checked=!!dft.vals[f.id]; else f.value=dft.vals[f.id]; f.dispatchEvent(new Event('input',{bubbles:true})); f.dispatchEvent(new Event('change',{bubbles:true})); }); bar.remove(); toast('Restored'); };
+bs[1].onclick=function(e){ e.stopPropagation(); localStorage.removeItem(k); bar.remove(); };
+} catch(e){}
+}, 350);
+}
+(function(){
+var sObs=new MutationObserver(function(ms){ ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType===1 && n.classList.contains('sheet')) draftOffer(n); }); }); });
+sObs.observe(document.body,{childList:true});
+var _call=call; call=function(a, p){ var pend=DRAFT_PENDING; return _call(a, p).then(function(r){ if(pend && Date.now()-pend.at<60000 && !/^(rotaWeek|garage|kartFile|jobFile|staffFile|staffList|cashUpDay|me|home|dash)$/.test(a)){ try{ localStorage.removeItem(pend.key); }catch(e){} DRAFT_PENDING=null; } return r; }); };
+var st=document.createElement('style'); st.textContent='.draft-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--gold-soft,#fff6d8);border:1px solid var(--gold,#c8961e);border-radius:10px;padding:8px 10px;margin:0 0 12px;font-size:14px}.draft-bar span{flex:1;min-width:180px}.rp-tbl td,.rp-tbl th{white-space:nowrap}.rp-pre{display:flex;gap:6px;flex-wrap:wrap}';
+document.head.appendChild(st);
+var obs=new MutationObserver(function(){ var m=$('#main'); if(m && (S.view==='cashup') && m.querySelector('input[id]') && !m.__draftSeen){ m.__draftSeen=true; draftOffer(m); } if(m && S.view!=='cashup') m.__draftSeen=false; });
+document.addEventListener('DOMContentLoaded', function(){ var m=$('#main'); if(m) obs.observe(m,{childList:true}); });
+if (document.readyState!=='loading'){ var m=$('#main'); if(m) obs.observe(m,{childList:true}); }
+})();
+VIEWS.moneyreport = function(){
+var t=toYmd(new Date());
+S.rep=S.rep||{from:t.slice(0,7)+'-01', to:t, company:'', preset:'month'};
+var m=$('#main'); busy(m);
+call('moneyReport',{from:S.rep.from, to:S.rep.to, company:S.rep.company}).then(drawReport).catch(function(e){ m.innerHTML=errBox(e); });
+};
+function repRange(k){
+var t=toYmd(new Date()), d=pYmd(t), y=d.getFullYear(), mo=d.getMonth();
+var f=function(x){ return toYmd(x); };
+if (k==='week') return [monday(t), t];
+if (k==='lastweek') return [addD(monday(t),-7), addD(monday(t),-1)];
+if (k==='month') return [t.slice(0,7)+'-01', t];
+if (k==='lastmonth') return [f(new Date(y,mo-1,1)), f(new Date(y,mo,0))];
+if (k==='quarter') return [f(new Date(y,mo-2,1)), t];
+if (k==='year') return [y+'-01-01', t];
+if (k==='lastyear') return [(y-1)+'-01-01', (y-1)+'-12-31'];
+return [S.rep.from, S.rep.to];
+}
+function pct(a,b){ if(!b) return ''; var p=Math.round((a-b)/b*100); return '<span style="color:'+(p>=0?'var(--green)':'var(--red)')+'">'+(p>=0?'+':'')+p+'%</span>'; }
+function drawReport(d){
+S.rep.company=d.company; S.data.rep=d; var m=$('#main'), t=d.totals;
+var pre=[['week','This week'],['lastweek','Last week'],['month','This month'],['lastmonth','Last month'],['quarter','Last 3 months'],['year','This year'],['lastyear','Last year']];
+var maxDow=Math.max.apply(null, d.dow.map(function(x){ return x.avg; }).concat([1]));
+m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+' · Reports</div><h1>Takings report</h1><p>'+esc(fmt(d.from))+' to '+esc(fmt(d.to))+'. From the submitted cash ups, with online sales that came in after close counted on the day they belong to.</p></div>'+
+'<div class="acts">'+coSelect(d,'rp_co')+'<button class="btn" id="rp_csv">Download spreadsheet</button><button class="btn" id="rp_back">Money</button></div></div>'+
+'<div class="panel pad" style="margin-bottom:14px"><div class="rp-pre">'+pre.map(function(p){ return '<button class="btn sm'+(S.rep.preset===p[0]?' pri':'')+'" data-rp="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>'+
+'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px"><label class="f" style="margin:0">From<input class="inp" type="date" id="rp_f" value="'+d.from+'"></label><label class="f" style="margin:0">To<input class="inp" type="date" id="rp_t" value="'+d.to+'"></label><button class="btn" id="rp_go">Show</button></div></div>'+
+'<div class="board"><div class="hi"><b class="num">'+gbp0(t.total)+'</b><span>Total takings · '+t.days+' day'+(t.days===1?'':'s')+'</span></div><div><b class="num">'+gbp0(t.tk)+'</b><span>TeamKarting</span></div><div><b class="num">'+gbp0(t.cafe)+'</b><span>Cafe</span></div>'+
+'<div><b class="num">'+gbp0(t.avg)+'</b><span>Average a day</span></div><div class="'+(d.onSite.total?'warn':'')+'"><b class="num">'+gbp0(d.onSite.total)+'</b><span>Cash on site now</span></div><div class="'+(Math.abs(t.disc)>20?'warn':'')+'"><b class="num">'+sgn(t.disc)+'</b><span>Net over or short</span></div></div>'+
+'<div class="grid g2" style="margin-top:14px"><div class="panel"><div class="sec-h"><h2>How it was taken</h2></div><div class="tbl-wrap"><table class="tbl"><tbody>'+
+[['Card',t.card],['Cash',t.cash],['Online at cash up',t.online],['Online after close',t.onlineLate],['Cafe card',t.cafeCard],['Cafe cash',t.cafeCash],['Upsales',t.upsales],['Cash banked',t.banked]].map(function(r){ return '<tr><td>'+r[0]+'</td><td class="num">'+gbp(r[1])+'</td><td class="num hint">'+(t.total?Math.round(r[1]/t.total*100)+'%':'')+'</td></tr>'; }).join('')+
+'</tbody></table></div></div>'+
+'<div class="panel"><div class="sec-h"><h2>Compared with</h2></div><div class="tbl-wrap"><table class="tbl"><tbody>'+
+'<tr><td>Previous '+d.days+' days<div class="hint">'+fmt(d.prev.from)+' to '+fmt(d.prev.to)+'</div></td><td class="num">'+gbp0(d.prev.totals.total)+'</td><td class="num">'+pct(t.total,d.prev.totals.total)+'</td></tr>'+
+'<tr><td>Same dates last year<div class="hint">'+fmt(d.lastYear.from)+' to '+fmt(d.lastYear.to)+'</div></td><td class="num">'+(d.lastYear.totals.days?gbp0(d.lastYear.totals.total):'<span class="hint">No cash ups</span>')+'</td><td class="num">'+pct(t.total,d.lastYear.totals.total)+'</td></tr>'+
+(d.best?'<tr><td>Best day</td><td class="num">'+gbp0(d.best.total)+'</td><td class="num hint">'+dayName(d.best.date)+' '+fmt(d.best.date)+'</td></tr>':'')+
+(d.worst?'<tr><td>Quietest day</td><td class="num">'+gbp0(d.worst.total)+'</td><td class="num hint">'+dayName(d.worst.date)+' '+fmt(d.worst.date)+'</td></tr>':'')+
+'</tbody></table></div>'+
+'<div class="pad"><div class="eyebrow" style="margin-bottom:6px">Average by day of the week</div>'+d.dow.map(function(x){ return '<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px"><span style="width:34px">'+x.day.slice(0,3)+'</span><span style="flex:1;background:var(--sunk);border-radius:4px;height:12px"><span style="display:block;height:12px;border-radius:4px;background:var(--gold);width:'+Math.round(x.avg/maxDow*100)+'%"></span></span><span class="num" style="width:70px;text-align:right">'+(x.n?gbp0(x.avg):'')+'</span></div>'; }).join('')+'</div></div></div>'+
+'<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Cash on site</h2><span class="chip '+(d.onSite.list.length?'amb':'grn')+'">'+gbp(d.onSite.total)+'</span></div>'+
+(d.onSite.list.length?'<p class="pad hint" style="margin:0;border-bottom:1px solid var(--line)">Cash from these cash ups is still on site. Mark each bag as banked once it has gone to the bank.</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Bag</th><th class="num">Cash</th><th>Cashed up by</th><th></th></tr></thead><tbody>'+
+d.onSite.list.map(function(r){ return '<tr><td>'+dayName(r.date)+' '+fmt(r.date)+'</td><td>'+esc(r.bagNo||'Not given')+'</td><td class="num">'+gbp(r.banked)+'</td><td>'+esc(r.by)+'</td><td><button class="btn sm" data-bank="'+esc(r.id)+'">Mark banked</button></td></tr>'; }).join('')+'</tbody></table></div>':'<p class="pad hint">All cash has been banked.</p>')+'</div>'+
+(d.months.length>1?'<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>By month</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="num">Days</th><th class="num">TeamKarting</th><th class="num">Cafe</th><th class="num">Total</th><th class="num">Average a day</th></tr></thead><tbody>'+
+d.months.map(function(x){ return '<tr><td>'+monthLabel(x.month)+'</td><td class="num">'+x.days+'</td><td class="num">'+gbp0(x.tk)+'</td><td class="num">'+gbp0(x.cafe)+'</td><td class="num"><b>'+gbp0(x.total)+'</b></td><td class="num">'+gbp0(x.total/x.days)+'</td></tr>'; }).join('')+'</tbody></table></div></div>':'')+
+'<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Day by day</h2><span class="chip">'+d.list.length+'</span></div>'+
+(Array.isArray(d.missing)&&d.missing.length?'<p class="pad hint" style="margin:0;border-bottom:1px solid var(--line)">No cash up for '+d.missing.length+' day'+(d.missing.length===1?'':'s')+': '+d.missing.slice(0,12).map(function(x){ return dayName(x)+' '+dayNum(x); }).join(', ')+(d.missing.length>12?' and more':'')+'. Closed days are fine, anything else is missing.</p>':'')+
+(d.list.length?'<div class="tbl-wrap"><table class="tbl rp-tbl"><thead><tr><th>Date</th><th class="num">Card</th><th class="num">Cash</th><th class="num">Online</th><th class="num">TeamKarting</th><th class="num">Cafe</th><th class="num">Total</th><th class="num">Over/short</th><th>Banked</th><th>Cashed up by</th></tr></thead><tbody>'+
+d.list.slice().reverse().map(function(r){ return '<tr class="click" data-cu="'+esc(r.date)+'"><td>'+dayName(r.date)+' '+fmt(r.date)+(r.flags.length?' <span class="chip red">Flag</span>':'')+'</td><td class="num">'+gbp(r.card)+'</td><td class="num">'+gbp(r.cash)+'</td><td class="num">'+gbp(r.online+r.onlineLate)+(r.onlineFinal?'':' <span class="hint" title="Final online total not added yet">*</span>')+'</td><td class="num">'+gbp(r.tk)+'</td><td class="num">'+gbp(r.cafe)+'</td><td class="num"><b>'+gbp(r.total)+'</b></td>'+
+'<td class="num" style="color:'+(Math.abs(r.disc)<0.005?'inherit':r.disc<0?'var(--red)':'var(--amber,#b86e00)')+'">'+(Math.abs(r.disc)<0.005?'0':sgn(r.disc))+'</td><td>'+(r.bankedAt?fmt(r.bankedAt):r.banked?'<span class="chip amb">On site</span>':'')+'</td><td>'+esc(r.by)+'</td></tr>'; }).join('')+
+'<tr><td><b>Total</b></td><td class="num"><b>'+gbp(t.card)+'</b></td><td class="num"><b>'+gbp(t.cash)+'</b></td><td class="num"><b>'+gbp(t.online+t.onlineLate)+'</b></td><td class="num"><b>'+gbp(t.tk)+'</b></td><td class="num"><b>'+gbp(t.cafe)+'</b></td><td class="num"><b>'+gbp(t.total)+'</b></td><td class="num"><b>'+sgn(t.disc)+'</b></td><td></td><td></td></tr>'+
+'</tbody></table></div>':'<p class="pad hint">No cash ups in this period.</p>')+'</div>';
+var set=function(f,t2,p){ S.rep.from=f; S.rep.to=t2; S.rep.preset=p; VIEWS.moneyreport(); };
+m.querySelectorAll('[data-rp]').forEach(function(b){ b.onclick=function(){ var r=repRange(b.dataset.rp); set(r[0],r[1],b.dataset.rp); }; });
+$('#rp_go').onclick=function(){ set($('#rp_f').value||d.from, $('#rp_t').value||d.to, 'custom'); };
+if ($('#rp_co')) $('#rp_co').onchange=function(){ S.rep.company=this.value; VIEWS.moneyreport(); };
+$('#rp_back').onclick=function(){ go(hasMod('money')?'money':'cashhistory'); };
+$('#rp_csv').onclick=function(){ repCsv(d); };
+m.querySelectorAll('[data-bank]').forEach(function(b){ b.onclick=function(){ if(!confirmBox('Mark this cash as banked?')) return; b.disabled=true; call('signCashUp',{id:b.dataset.bank, kind:'banked'}).then(function(){ toast('Marked as banked'); VIEWS.moneyreport(); }).catch(function(e){ toast(e.message); b.disabled=false; }); }; });
+m.querySelectorAll('[data-cu]').forEach(function(r){ r.onclick=function(){ S.cashMonth=r.dataset.cu.slice(0,7); go('cashhistory'); }; });
+}
+function repCsv(d){
+var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+var lines=[['Date','Day','Card','Cash','Online at cash up','Online after close','TeamKarting','Cafe card','Cafe cash','Cafe','Total','Over or short','Upsales','Cash banked','Bag','Banked on','Cashed up by','Flags'].join(',')];
+d.list.forEach(function(r){ lines.push([r.date, dayName(r.date), r.card, r.cash, r.online, r.onlineLate, r.tk, r.cafeCard, r.cafeCash, r.cafe, r.total, r.disc, r.upsales, r.banked, r.bagNo, r.bankedAt?r.bankedAt.slice(0,10):'', r.by, r.flags.join('; ')].map(q).join(',')); });
+var t=d.totals; lines.push(['Total','',t.card,t.cash,t.online,t.onlineLate,t.tk,t.cafeCard,t.cafeCash,t.cafe,t.total,t.disc,t.upsales,t.banked,'','','',''].map(q).join(','));
+var blob=new Blob([lines.join('\r\n')],{type:'text/csv'}), a=document.createElement('a');
+a.href=URL.createObjectURL(blob); a.download=d.company.replace(/\s+/g,'-')+'-takings-'+d.from+'-to-'+d.to+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
