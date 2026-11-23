@@ -447,7 +447,7 @@ function initials(n){ return String(n||'?').split(' ').map(function(x){return x[
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function hasMod(m){ return !!(S.me && (S.me.modules||[]).indexOf(m)>=0); }
 function isMgr(){ return hasMod('dashboard'); }
-var VIEW_MOD={moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
+var VIEW_MOD={mgrdocs:'mgrdocs',moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
 function canView(v){ return !!VIEWS[v] && (!VIEW_MOD[v] || hasMod(VIEW_MOD[v])); }
 function stateChip(st, dueSoon){
 if (st==='Signed') return dueSoon ? '<span class="chip amb">Re-sign soon</span>' : '<span class="chip grn">Signed</span>';
@@ -690,7 +690,7 @@ VIEWS.docs = function(){
 var m=$('#main'); busy(m);
 call('documents').then(function(list){
 var cats = {}; list.forEach(function(d){ (cats[d.category]=cats[d.category]||[]).push(d); });
-m.innerHTML = '<div class="head"><div><div class="eyebrow">TK document library</div><h1>Documents</h1><p>Publish a new version and everyone it applies to is emailed and asked to re-sign.</p></div></div>'+
+m.innerHTML = '<div class="head"><div><div class="eyebrow">TK document library</div><h1>Documents</h1><p>Publish a new version and everyone it applies to is emailed and asked to re-sign.</p></div>'+(hasMod('mgrdocs')?'<div class="acts"><button class="btn pri" id="mgrbtn">Manager files</button></div>':'')+'</div>'+
 Object.keys(cats).map(function(c){
 return '<div class="panel" style="margin-bottom:14px"><div class="sec-h"><h2>'+esc(c)+'</h2><span class="chip">'+cats[c].length+'</span></div><div class="tbl-wrap"><table><thead><tr><th>Document</th><th>Signed by</th><th>Version</th><th>How it is signed</th><th></th></tr></thead><tbody>'+
 cats[c].map(function(d){
@@ -702,6 +702,7 @@ return '<tr><td><b>'+esc(d.code)+'</b> '+esc(d.title)+'<div class="hint">'+esc(d
 }).join('')+'</tbody></table></div></div>';
 }).join('');
 m.querySelectorAll('[data-pub]').forEach(function(b){ b.onclick=function(){ publishSheet(b.dataset.pub, b.dataset.t); }; });
+if ($('#mgrbtn')) $('#mgrbtn').onclick=function(){ go('mgrdocs'); };
 }).catch(function(e){ m.innerHTML=errBox(e); });
 };
 function publishSheet(code, title){
@@ -1637,7 +1638,7 @@ call('cashUpDay',{date:S.cash.date, company:S.cash.company}).then(drawCashUp).ca
 };
 var CU_TK=[['tkReport','Total TK sales (report)','From the till report'],['cardReport','Card machine (report)','What the till says went on card'],['cardActual','Card machine (actual)','From the card machine end of day'],
 ['cashReport','Cash (report)','What the till says was taken in cash'],['cashActual','Cash taken (actual)','Counted, after taking out the float'],
-['online','Online sales (so far today)','Today\'s gross volume in Stripe. Time stamped when you save'],['cashBanked','Cash banked','Going in the bank bag']];
+['online','Online sales (so far today)','Today\'s gross volume in Stripe. Time stamped when you save'],['bankTransfer','Bank transfers','Paid straight into the bank today, like party deposits or corporate invoices. Leave blank if none'],['cashBanked','Cash banked','Going in the bank bag']];
 function hm(iso){ if(!iso) return ''; return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
 function dhm(iso){ if(!iso) return ''; var d=new Date(iso); return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' at '+hm(iso); }
 var CU_CAFE=[['cafeReport','Cafe total sales (report)','Leave blank if the cafe was closed'],['cafeCardReport','Card machine (report)',''],['cafeCardActual','Card machine (actual)',''],
@@ -1652,7 +1653,7 @@ m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+'</div
 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+st+(r.by?'<span class="chip">By '+esc(r.by)+'</span>':'')+(r.submittedAt?'<span class="chip">Cashed up '+esc(dhm(r.submittedAt))+'</span>':'')+(r.submittedAt&&r.updatedAt&&r.updatedAt>r.submittedAt&&r.updatedAt.slice(0,16)!==r.submittedAt.slice(0,16)?'<span class="chip">Updated '+esc(dhm(r.updatedAt))+'</span>':'')+(r.signedBy?'<span class="chip grn">Signed off by '+esc(r.signedBy)+'</span>':'')+(lock?'<span class="chip red">Locked, ask a manager to change it</span>':'')+'</div>'+
 '<div class="grid g2"><div><div class="panel cu-sec"><div class="sec-h"><h2>TeamKarting</h2></div>'+CU_TK.map(fig).join('')+
 '<div class="cu-row"><label for="cu_bagNo">Bank bag number</label><input class="inp" id="cu_bagNo" value="'+esc(r.bagNo||'')+'" '+(lock?'disabled':'')+'></div>'+
-'<div class="cu-calc"><span>Total TK sales (actual) <b class="num" id="cu_tka"></b><span class="hint" style="display:block">Card + cash + online</span></span><span id="cu_tkd"></span></div><div class="cu-calc"><span>Card</span><span id="cu_cdd"></span></div><div class="cu-calc"><span>Cash</span><span id="cu_csd"></span></div></div>'+
+'<div class="cu-calc"><span>Total TK sales (actual) <b class="num" id="cu_tka"></b><span class="hint" style="display:block">Card + cash + online + bank transfers</span></span><span id="cu_tkd"></span></div><div class="cu-calc"><span>Card</span><span id="cu_cdd"></span></div><div class="cu-calc"><span>Cash</span><span id="cu_csd"></span></div></div>'+
 '<div class="panel cu-sec"><div class="sec-h"><h2>Cafe</h2></div>'+CU_CAFE.map(fig).join('')+
 '<div class="cu-calc"><span>Cafe actual <b class="num" id="cu_cfa"></b></span><span id="cu_cfd"></span></div><div class="cu-calc"><span>Card</span><span id="cu_ccd"></span></div><div class="cu-calc"><span>Cash</span><span id="cu_cad"></span></div></div></div>'+
 '<div><div class="panel cu-sec cu-eod"><div class="sec-h"><h2>End of day total</h2></div>'+
@@ -1671,7 +1672,7 @@ m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+'</div
 var v=function(k){ var x=$('#cu_'+k); return x?x.value.trim():''; }, n=function(k){ return Number(v(k).replace(/[£,]/g,''))||0; };
 var chip=function(id, val, blank){ var el=$('#'+id); if(!el) return; if(blank){ el.innerHTML='<span class="cu-d zero">Waiting</span>'; return; } el.innerHTML='<span class="cu-d '+(Math.abs(val)>d.tolerance?'bad':Math.abs(val)<0.005?'zero':'')+'">'+(Math.abs(val)<0.005?'Balanced':sgn(val))+'</span>'; };
 var calc=function(){
-var tka=n('cardActual')+n('cashActual')+n('online'), cfa=n('cafeCardActual')+n('cafeCashActual'); $('#cu_tka').textContent=gbp(tka); $('#cu_cfa').textContent=gbp(cfa);
+var tka=n('cardActual')+n('cashActual')+n('online')+n('bankTransfer'), cfa=n('cafeCardActual')+n('cafeCashActual'); $('#cu_tka').textContent=gbp(tka); $('#cu_cfa').textContent=gbp(cfa);
 var hasFinal=r.onlineFinal!==''&&r.onlineFinal!=null, late=hasFinal?Math.round((Number(r.onlineFinal)-n('online'))*100)/100:0;
 $('#eod_tk').textContent=gbp(tka); $('#eod_cafe').textContent=gbp(cfa); $('#eod_late').textContent=hasFinal?gbp(late):'Not added yet';
 $('#eod_late_h').textContent=hasFinal?'Final online for the day '+gbp(r.onlineFinal)+(r.onlineFinalBy?', added by '+r.onlineFinalBy:''):(d.date<today?'Add the final online total from Stripe':'Added tomorrow from Stripe');
@@ -1732,7 +1733,7 @@ var sh=sheetOpen('<div class="sheet-in" role="dialog"><div class="sheet-h"><div>
 (c.flags.length?'<div class="err" style="margin:12px 16px 0">'+esc(c.flags.join(', '))+'</div>':'')+
 '<dl class="kv2">'+row('End of day total','<b>'+gbp(k.takings)+'</b> (TeamKarting '+gbp(k.tkDay)+' + cafe '+gbp(k.cafeActual)+')')+row('TK sales report',rep(c.tkReport))+row('TK actual',gbp(k.tkActual)+' ('+sgn(k.tkDisc)+')')+row('Card report / actual',rep(c.cardReport)+' / '+rep(c.cardActual)+' ('+sgn(k.cardDisc)+')')+
 row('Cash report / actual',rep(c.cashReport)+' / '+rep(c.cashActual)+' ('+sgn(k.cashDisc)+')')+row('Cash banked',rep(c.cashBanked)+(c.bagNo?', bag '+esc(c.bagNo):''))+
-row('Online at cash up',rep(c.online)+(c.onlineAt?' as at '+esc(dhm(c.onlineAt)):''))+
+row('Online at cash up',rep(c.online)+(c.onlineAt?' as at '+esc(dhm(c.onlineAt)):''))+row('Bank transfers',rep(c.bankTransfer)||'None')+
 row('Online final for the day',c.onlineFinal===''||c.onlineFinal==null?'<span class="chip amb">Not added yet</span>':gbp(c.onlineFinal)+(k.onlineLate?' (+'+gbp(k.onlineLate)+' after close)':'')+(c.onlineFinalBy?', '+esc(c.onlineFinalBy)+' '+esc(dhm(c.onlineFinalAt)):''))+
 (c.cafeReport!==''?row('Cafe report',rep(c.cafeReport))+row('Cafe actual',gbp(k.cafeActual)+' ('+sgn(k.cafeDisc)+')')+row('Cafe card report / actual',rep(c.cafeCardReport)+' / '+rep(c.cafeCardActual))+row('Cafe cash report / actual',rep(c.cafeCashReport)+' / '+rep(c.cafeCashActual))+row('Cafe cash banked',rep(c.cafeCashBanked)):row('Cafe','Closed or not entered'))+
 row('Upsales',(c.upsales!==''?gbp(c.upsales):'')+(c.upsalesNote?' '+esc(c.upsalesNote):''))+row('Safety culture',esc(c.scSummary||''))+
@@ -2003,7 +2004,7 @@ add('tasks','Tasks','tasks'); t.push(['checks','Checks']); add('cashup','Cash up
 add('rota','Rota','rota'); if(hasMod('timesheets')&&!hasMod('rota')) t.push(['timesheets','Timesheets']);
 if(hasMod('staff')) t.push(['staff','Staff']); else if(hasMod('absence')) t.push(['absence','Absence']);
 add('contracts','Contracts','contracts');
-add('docs','Documents','docs'); if(hasMod('training')) t.push(['training','Training']); else if(hasMod('conduct')) t.push(['conduct','Conduct']);
+add('docs','Documents','docs'); if(hasMod('mgrdocs')&&!hasMod('docs')) t.push(['mgrdocs','Manager files']); if(hasMod('training')) t.push(['training','Training']); else if(hasMod('conduct')) t.push(['conduct','Conduct']);
 add('money','Money','money'); if(hasMod('admin')) t.push(['access','Access']);
 if(isMgr()) t.push(['home','My portal'],['myrota','My rota and holiday']); else t=t.concat([['myrota','My rota and holiday'],['mydocs','My documents'],['mytraining','My training'],['me','My details']]);
 return t;
@@ -2618,7 +2619,7 @@ m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+' · R
 '<div class="board"><div class="hi"><b class="num">'+gbp0(t.total)+'</b><span>Total takings · '+t.days+' day'+(t.days===1?'':'s')+'</span></div><div><b class="num">'+gbp0(t.tk)+'</b><span>TeamKarting</span></div><div><b class="num">'+gbp0(t.cafe)+'</b><span>Cafe</span></div>'+
 '<div><b class="num">'+gbp0(t.avg)+'</b><span>Average a day</span></div><div class="'+(d.onSite.total?'warn':'')+'"><b class="num">'+gbp0(d.onSite.total)+'</b><span>Cash on site now</span></div><div class="'+(Math.abs(t.disc)>20?'warn':'')+'"><b class="num">'+sgn(t.disc)+'</b><span>Net over or short</span></div></div>'+
 '<div class="grid g2" style="margin-top:14px"><div class="panel"><div class="sec-h"><h2>How it was taken</h2></div><div class="tbl-wrap"><table class="tbl"><tbody>'+
-[['Card',t.card],['Cash',t.cash],['Online at cash up',t.online],['Online after close',t.onlineLate],['Cafe card',t.cafeCard],['Cafe cash',t.cafeCash],['Upsales',t.upsales],['Cash banked',t.banked]].map(function(r){ return '<tr><td>'+r[0]+'</td><td class="num">'+gbp(r[1])+'</td><td class="num hint">'+(t.total?Math.round(r[1]/t.total*100)+'%':'')+'</td></tr>'; }).join('')+
+[['Card',t.card],['Cash',t.cash],['Online at cash up',t.online],['Bank transfers',t.transfer],['Online after close',t.onlineLate],['Cafe card',t.cafeCard],['Cafe cash',t.cafeCash],['Upsales',t.upsales],['Cash banked',t.banked]].map(function(r){ return '<tr><td>'+r[0]+'</td><td class="num">'+gbp(r[1])+'</td><td class="num hint">'+(t.total?Math.round(r[1]/t.total*100)+'%':'')+'</td></tr>'; }).join('')+
 '</tbody></table></div></div>'+
 '<div class="panel"><div class="sec-h"><h2>Compared with</h2></div><div class="tbl-wrap"><table class="tbl"><tbody>'+
 '<tr><td>Previous '+d.days+' days<div class="hint">'+fmt(d.prev.from)+' to '+fmt(d.prev.to)+'</div></td><td class="num">'+gbp0(d.prev.totals.total)+'</td><td class="num">'+pct(t.total,d.prev.totals.total)+'</td></tr>'+
@@ -2634,10 +2635,10 @@ d.onSite.list.map(function(r){ return '<tr><td>'+dayName(r.date)+' '+fmt(r.date)
 d.months.map(function(x){ return '<tr><td>'+monthLabel(x.month)+'</td><td class="num">'+x.days+'</td><td class="num">'+gbp0(x.tk)+'</td><td class="num">'+gbp0(x.cafe)+'</td><td class="num"><b>'+gbp0(x.total)+'</b></td><td class="num">'+gbp0(x.total/x.days)+'</td></tr>'; }).join('')+'</tbody></table></div></div>':'')+
 '<div class="panel" style="margin-top:14px"><div class="sec-h"><h2>Day by day</h2><span class="chip">'+d.list.length+'</span></div>'+
 (Array.isArray(d.missing)&&d.missing.length?'<p class="pad hint" style="margin:0;border-bottom:1px solid var(--line)">No cash up for '+d.missing.length+' day'+(d.missing.length===1?'':'s')+': '+d.missing.slice(0,12).map(function(x){ return dayName(x)+' '+dayNum(x); }).join(', ')+(d.missing.length>12?' and more':'')+'. Closed days are fine, anything else is missing.</p>':'')+
-(d.list.length?'<div class="tbl-wrap"><table class="tbl rp-tbl"><thead><tr><th>Date</th><th class="num">Card</th><th class="num">Cash</th><th class="num">Online</th><th class="num">TeamKarting</th><th class="num">Cafe</th><th class="num">Total</th><th class="num">Over/short</th><th>Banked</th><th>Cashed up by</th></tr></thead><tbody>'+
-d.list.slice().reverse().map(function(r){ return '<tr class="click" data-cu="'+esc(r.date)+'"><td>'+dayName(r.date)+' '+fmt(r.date)+(r.flags.length?' <span class="chip red">Flag</span>':'')+'</td><td class="num">'+gbp(r.card)+'</td><td class="num">'+gbp(r.cash)+'</td><td class="num">'+gbp(r.online+r.onlineLate)+(r.onlineFinal?'':' <span class="hint" title="Final online total not added yet">*</span>')+'</td><td class="num">'+gbp(r.tk)+'</td><td class="num">'+gbp(r.cafe)+'</td><td class="num"><b>'+gbp(r.total)+'</b></td>'+
+(d.list.length?'<div class="tbl-wrap"><table class="tbl rp-tbl"><thead><tr><th>Date</th><th class="num">Card</th><th class="num">Cash</th><th class="num">Online</th><th class="num">Transfers</th><th class="num">TeamKarting</th><th class="num">Cafe</th><th class="num">Total</th><th class="num">Over/short</th><th>Banked</th><th>Cashed up by</th></tr></thead><tbody>'+
+d.list.slice().reverse().map(function(r){ return '<tr class="click" data-cu="'+esc(r.date)+'"><td>'+dayName(r.date)+' '+fmt(r.date)+(r.flags.length?' <span class="chip red">Flag</span>':'')+'</td><td class="num">'+gbp(r.card)+'</td><td class="num">'+gbp(r.cash)+'</td><td class="num">'+gbp(r.online+r.onlineLate)+(r.onlineFinal?'':' <span class="hint" title="Final online total not added yet">*</span>')+'</td><td class="num">'+(r.transfer?gbp(r.transfer):'')+'</td><td class="num">'+gbp(r.tk)+'</td><td class="num">'+gbp(r.cafe)+'</td><td class="num"><b>'+gbp(r.total)+'</b></td>'+
 '<td class="num" style="color:'+(Math.abs(r.disc)<0.005?'inherit':r.disc<0?'var(--red)':'var(--amber,#b86e00)')+'">'+(Math.abs(r.disc)<0.005?'0':sgn(r.disc))+'</td><td>'+(r.bankedAt?fmt(r.bankedAt):r.banked?'<span class="chip amb">On site</span>':'')+'</td><td>'+esc(r.by)+'</td></tr>'; }).join('')+
-'<tr><td><b>Total</b></td><td class="num"><b>'+gbp(t.card)+'</b></td><td class="num"><b>'+gbp(t.cash)+'</b></td><td class="num"><b>'+gbp(t.online+t.onlineLate)+'</b></td><td class="num"><b>'+gbp(t.tk)+'</b></td><td class="num"><b>'+gbp(t.cafe)+'</b></td><td class="num"><b>'+gbp(t.total)+'</b></td><td class="num"><b>'+sgn(t.disc)+'</b></td><td></td><td></td></tr>'+
+'<tr><td><b>Total</b></td><td class="num"><b>'+gbp(t.card)+'</b></td><td class="num"><b>'+gbp(t.cash)+'</b></td><td class="num"><b>'+gbp(t.online+t.onlineLate)+'</b></td><td class="num"><b>'+gbp(t.transfer)+'</b></td><td class="num"><b>'+gbp(t.tk)+'</b></td><td class="num"><b>'+gbp(t.cafe)+'</b></td><td class="num"><b>'+gbp(t.total)+'</b></td><td class="num"><b>'+sgn(t.disc)+'</b></td><td></td><td></td></tr>'+
 '</tbody></table></div>':'<p class="pad hint">No cash ups in this period.</p>')+'</div>';
 var set=function(f,t2,p){ S.rep.from=f; S.rep.to=t2; S.rep.preset=p; VIEWS.moneyreport(); };
 m.querySelectorAll('[data-rp]').forEach(function(b){ b.onclick=function(){ var r=repRange(b.dataset.rp); set(r[0],r[1],b.dataset.rp); }; });
@@ -2650,12 +2651,88 @@ m.querySelectorAll('[data-cu]').forEach(function(r){ r.onclick=function(){ S.cas
 }
 function repCsv(d){
 var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
-var lines=[['Date','Day','Card','Cash','Online at cash up','Online after close','TeamKarting','Cafe card','Cafe cash','Cafe','Total','Over or short','Upsales','Cash banked','Bag','Banked on','Cashed up by','Flags'].join(',')];
-d.list.forEach(function(r){ lines.push([r.date, dayName(r.date), r.card, r.cash, r.online, r.onlineLate, r.tk, r.cafeCard, r.cafeCash, r.cafe, r.total, r.disc, r.upsales, r.banked, r.bagNo, r.bankedAt?r.bankedAt.slice(0,10):'', r.by, r.flags.join('; ')].map(q).join(',')); });
-var t=d.totals; lines.push(['Total','',t.card,t.cash,t.online,t.onlineLate,t.tk,t.cafeCard,t.cafeCash,t.cafe,t.total,t.disc,t.upsales,t.banked,'','','',''].map(q).join(','));
+var lines=[['Date','Day','Card','Cash','Online at cash up','Online after close','Bank transfers','TeamKarting','Cafe card','Cafe cash','Cafe','Total','Over or short','Upsales','Cash banked','Bag','Banked on','Cashed up by','Flags'].join(',')];
+d.list.forEach(function(r){ lines.push([r.date, dayName(r.date), r.card, r.cash, r.online, r.onlineLate, r.transfer, r.tk, r.cafeCard, r.cafeCash, r.cafe, r.total, r.disc, r.upsales, r.banked, r.bagNo, r.bankedAt?r.bankedAt.slice(0,10):'', r.by, r.flags.join('; ')].map(q).join(',')); });
+var t=d.totals; lines.push(['Total','',t.card,t.cash,t.online,t.onlineLate,t.transfer,t.tk,t.cafeCard,t.cafeCash,t.cafe,t.total,t.disc,t.upsales,t.banked,'','','',''].map(q).join(','));
 var blob=new Blob([lines.join('\r\n')],{type:'text/csv'}), a=document.createElement('a');
 a.href=URL.createObjectURL(blob); a.download=d.company.replace(/\s+/g,'-')+'-takings-'+d.from+'-to-'+d.to+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+VIEWS.mgrdocs = function(){
+var m=$('#main'); busy(m); S.mgr=S.mgr||{folder:'', company:''};
+call('mgrDocs',{folder:S.mgr.folder, company:S.mgr.company}).then(drawMgr).catch(function(e){ m.innerHTML=errBox(e); });
+};
+function fsize(b){ b=Number(b)||0; return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
+function expChip(f){ if(!f.expires) return ''; var d=f.days; return '<span class="chip '+(d<0?'red':d<=30?'amb':'grn')+'">'+(d<0?'Expired '+fmt(f.expires):d===0?'Expires today':'Expires '+fmt(f.expires))+'</span>'; }
+function mgrIcon(f){ var t=f.mime||''; return /pdf/.test(t)?'PDF':/image/.test(t)?'IMG':/sheet|excel|csv/.test(t)?'XLS':/word|document/.test(t)?'DOC':'FILE'; }
+function drawMgr(d){
+S.mgr.folder=d.folder; S.mgr.company=d.company; S.data.mgr=d; var m=$('#main');
+var crumbs='<button class="link" data-go="">All folders</button>'+d.path.map(function(x){ return ' / <button class="link" data-go="'+esc(x.id)+'">'+esc(x.name)+'</button>'; }).join('');
+m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+' · Managers only</div><h1>Manager files</h1><p>Insurance certificates, licences, leases and anything else the managers need to hand. Only people with Manager files access can see these.</p></div>'+
+'<div class="acts">'+coSelect(d,'mg_co')+(hasMod('docs')?'<button class="btn" id="mg_docs">Staff documents</button>':'')+'<button class="btn" id="mg_nf">New folder</button><button class="btn pri" id="mg_up">'+ICON.plus+' Upload</button><input type="file" id="mg_file" multiple hidden></div></div>'+
+(d.expiring.length?'<div class="panel" style="margin-bottom:14px;border-left:4px solid var(--red)"><div class="sec-h"><h2>Renew soon</h2><span class="chip red">'+d.expiring.length+'</span></div><ul class="list">'+d.expiring.map(function(f){
+return '<li class="click" data-file="'+esc(f.id)+'"><span class="dot '+(f.days<0?'red':'amb')+'"></span><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="s">'+esc(f.folderName||'All folders')+' · '+(f.days<0?'expired '+(-f.days)+' day'+(f.days===-1?'':'s')+' ago':f.days===0?'expires today':'expires in '+f.days+' day'+(f.days===1?'':'s'))+'</div></div>'+expChip(f)+'</li>'; }).join('')+'</ul></div>':'')+
+'<div class="panel" id="mg_drop"><div class="sec-h"><h2 style="font-size:16px">'+crumbs+'</h2>'+(d.folder?'<div class="acts"><button class="btn sm" id="mg_ren">Rename folder</button><button class="btn sm" id="mg_delf">Delete folder</button></div>':'')+'</div>'+
+(d.folders.length||d.files.length?'<ul class="list">'+
+d.folders.map(function(f){ return '<li class="click" data-go="'+esc(f.id)+'"><span class="mg-ic fold">'+ICON.docs+'</span><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="s">'+f.count+' item'+(f.count===1?'':'s')+'</div></div><span class="hint">Open</span></li>'; }).join('')+
+d.files.map(function(f){ return '<li class="click" data-file="'+esc(f.id)+'"><span class="mg-ic">'+mgrIcon(f)+'</span><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="s">'+fsize(f.size)+' · '+esc(f.by)+' · '+fmt(f.at)+(f.notes?' · '+esc(f.notes):'')+'</div></div>'+expChip(f)+
+'<button class="btn sm" data-dl="'+esc(f.id)+'">Download</button></li>'; }).join('')+'</ul>':
+'<p class="pad hint">Nothing here yet. Upload a file or drag one onto this box.</p>')+
+'<p class="pad hint" style="margin:0;border-top:1px solid var(--line)">Drag files here to upload them to this folder. Up to 20MB each.</p></div>';
+m.querySelectorAll('[data-go]').forEach(function(b){ b.onclick=function(){ S.mgr.folder=b.dataset.go; VIEWS.mgrdocs(); }; });
+m.querySelectorAll('[data-dl]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); mgrDownload(b.dataset.dl, b); }; });
+m.querySelectorAll('[data-file]').forEach(function(r){ r.onclick=function(){ var f=d.files.concat(d.expiring).filter(function(x){ return x.id===r.dataset.file; })[0]; mgrFileSheet(f, d); }; });
+if ($('#mg_co')) $('#mg_co').onchange=function(){ S.mgr={company:this.value, folder:''}; VIEWS.mgrdocs(); };
+if ($('#mg_docs')) $('#mg_docs').onclick=function(){ go('docs'); };
+$('#mg_nf').onclick=function(){ var n=window.prompt('Name the new folder'+(d.path.length?' inside '+d.path[d.path.length-1].name:'')); if(!n) return; call('mgrFolder',{company:d.company, parent:d.folder, name:n}).then(function(r){ toast('Folder created'); drawMgr(r); }).catch(function(e){ toast(e.message); }); };
+if ($('#mg_ren')) $('#mg_ren').onclick=function(){ var cur=d.path[d.path.length-1]; var n=window.prompt('Rename folder', cur.name); if(!n||n===cur.name) return; call('mgrFolder',{id:cur.id, name:n}).then(function(r){ S.mgr.folder=cur.id; VIEWS.mgrdocs(); toast('Renamed'); }).catch(function(e){ toast(e.message); }); };
+if ($('#mg_delf')) $('#mg_delf').onclick=function(){ var cur=d.path[d.path.length-1]; if(!confirmBox('Delete the folder '+cur.name+'? It has to be empty.')) return; call('mgrDelete',{id:cur.id}).then(function(r){ toast('Folder deleted'); drawMgr(r); }).catch(function(e){ toast(e.message); }); };
+$('#mg_up').onclick=function(){ $('#mg_file').click(); };
+$('#mg_file').onchange=function(){ mgrUploadFiles(Array.prototype.slice.call(this.files), d); this.value=''; };
+var drop=$('#mg_drop');
+drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('mg-over'); });
+drop.addEventListener('dragleave', function(){ drop.classList.remove('mg-over'); });
+drop.addEventListener('drop', function(e){ e.preventDefault(); drop.classList.remove('mg-over'); mgrUploadFiles(Array.prototype.slice.call(e.dataTransfer.files||[]), d); });
+}
+function mgrUploadFiles(files, d){
+if (!files.length) return;
+var big=files.filter(function(f){ return f.size>20*1024*1024; }); if (big.length){ toast(big[0].name+' is over 20MB'); return; }
+var ask=files.length===1;
+var one=function(i){
+if (i>=files.length){ VIEWS.mgrdocs(); return; }
+var f=files[i], exp='';
+if (ask){ var a=window.prompt('Does '+f.name+' expire? Enter the expiry date as DD/MM/YYYY so you get a reminder, or leave it blank.',''); if(a===null){ return; } a=a.trim();
+var mm=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(a); if(a&&!mm){ toast('Use DD/MM/YYYY for the date'); return; } if(mm) exp=mm[3]+'-'+('0'+mm[2]).slice(-2)+'-'+('0'+mm[1]).slice(-2); }
+toast('Uploading '+f.name+(files.length>1?' ('+(i+1)+' of '+files.length+')':'')+'...');
+var rd=new FileReader(); rd.onload=function(){ call('mgrUpload',{company:d.company, folder:d.folder, name:f.name, data:rd.result, expires:exp}).then(function(){ toast(f.name+' uploaded'); one(i+1); }).catch(function(e){ toast(f.name+': '+e.message); one(i+1); }); };
+rd.onerror=function(){ toast('Could not read '+f.name); one(i+1); };
+rd.readAsDataURL(f);
+};
+one(0);
+}
+function mgrDownload(id, b){
+if (b) b.disabled=true; toast('Getting the file...');
+call('mgrGet',{id:id}).then(function(r){
+var m=/^data:([^;]*);base64,(.*)$/.exec(r.data), bin=atob(m[2]), arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+var blob=new Blob([arr],{type:m[1]||'application/octet-stream'}), a=document.createElement('a');
+a.href=URL.createObjectURL(blob); a.download=r.name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+if (b) b.disabled=false;
+}).catch(function(e){ toast(e.message); if(b) b.disabled=false; });
+}
+function mgrFileSheet(f, d){
+if (!f) return;
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:560px"><div class="sheet-h"><div><div class="eyebrow">Manager files</div><h2>'+esc(f.name)+'</h2><p class="hint" style="margin:4px 0 0">'+fsize(f.size)+' · uploaded by '+esc(f.by)+' '+fmt(f.at)+'</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="mff"><label class="f wide">Name<input class="inp" id="mf_n" value="'+esc(f.name)+'" required></label>'+
+'<label class="f">Expires on<input class="inp" type="date" id="mf_e" value="'+esc(f.expires)+'"></label><label class="f">Folder<select class="inp" id="mf_f"><option value="">All folders (top level)</option>'+d.allFolders.map(function(x){ return '<option value="'+esc(x.id)+'"'+(x.id===f.parent?' selected':'')+'>'+esc(x.name)+'</option>'; }).join('')+'</select></label>'+
+'<label class="f wide">Notes<input class="inp" id="mf_no" value="'+esc(f.notes)+'" placeholder="For example policy number, who to call to renew"></label>'+
+'<p class="wide hint" style="margin:0">With an expiry date set, managers are emailed 30 days and 7 days before, and on the day.</p><div class="wide" id="mfmsg"></div></form>'+
+'<div class="sheet-f" style="gap:8px"><button class="btn" id="mf_del" style="color:var(--red)">Delete</button><button class="btn" id="mf_dl">Download</button><button class="btn pri" id="mf_go">Save</button></div></div>'), el=sh.el;
+$('#mf_dl',el).onclick=function(){ mgrDownload(f.id, this); };
+$('#mf_go',el).onclick=function(){ if(!$('#mff',el).reportValidity()) return; var b=this; b.disabled=true;
+call('mgrFileSave',{id:f.id, name:$('#mf_n',el).value, expires:$('#mf_e',el).value, notes:$('#mf_no',el).value, folder:$('#mf_f',el).value, back:d.folder}).then(function(r){ sh.close(); toast('Saved'); drawMgr(r); })
+.catch(function(e){ $('#mfmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+$('#mf_del',el).onclick=function(){ if(!confirmBox('Delete '+f.name+'? It goes to the bin in Google Drive for 30 days.')) return; call('mgrDelete',{id:f.id}).then(function(r){ sh.close(); toast('Deleted'); S.mgr.folder=d.folder; VIEWS.mgrdocs(); }).catch(function(e){ toast(e.message); }); };
+}
+(function(){ var st=document.createElement('style'); st.textContent='.mg-ic{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:34px;border-radius:8px;background:var(--sunk);font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted)}.mg-ic.fold{background:var(--gold-soft,#fff3d6);color:var(--gold,#c8961e)}.mg-ic svg{width:18px;height:18px}#mg_drop.mg-over{outline:2px dashed var(--gold,#c8961e);outline-offset:-6px}'; document.head.appendChild(st); })();
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
 var who = offline?offline.name:(S.me.firstName+' '+S.me.lastName);
