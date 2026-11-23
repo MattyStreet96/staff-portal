@@ -1883,9 +1883,9 @@ function incChip(st){ return '<span class="chip '+(st==='Closed'?'grn':st==='Ope
 function drawIncidents(d){
 var m=$('#main'), s=d.stats;
 m.innerHTML='<div class="head"><div><div class="eyebrow">Accident and incident log</div><h1>Incidents</h1><p>'+(d.manager?'Every accident, near miss, kart failure and complaint in one place. Review each one, decide on RIDDOR and close it with what will stop it happening again.':'Report anything that happens on shift: accidents, near misses, kart problems or damage. Do it straight away while it is fresh.')+'</p></div><div class="acts"><button class="btn pri" id="incnew">'+ICON.plus+' Report an incident</button></div></div>'+
-(d.manager?'<div class="board"><div class="'+(s.open?'warn':'')+'"><b class="num">'+s.open+'</b><span>Open</span></div><div class="hi"><b class="num">'+s.d90+'</b><span>Last 90 days</span></div><div class="'+(s.injuries?'warn':'')+'"><b class="num">'+s.injuries+'</b><span>Injuries, 90 days</span></div><div class="'+(s.riddor?'warn':'')+'"><b class="num">'+s.riddor+'</b><span>RIDDOR to report</span></div></div>'+
+(d.manager?'<div class="board"><div class="'+(s.open?'warn':'')+'"><b class="num">'+s.open+'</b><span>Open</span></div><div class="hi"><b class="num">'+s.d90+'</b><span>Last 90 days</span></div><div class="'+(s.injuries?'warn':'')+'"><b class="num">'+s.injuries+'</b><span>Injuries, 90 days</span></div><div class="'+(s.riddor?'warn':'')+'"><b class="num">'+s.riddor+'</b><span>RIDDOR to report</span></div>'+(s.followUps!=null?'<div class="'+(s.followUps?'warn':'')+'"><b class="num">'+s.followUps+'</b><span>Follow ups to do</span></div>':'')+'</div>'+
 (s.karts.length?'<div class="panel pad" style="margin-bottom:14px"><b>Karts with more than one incident in 90 days:</b> '+s.karts.map(function(k){ return '<span class="chip red">'+esc(k.kart)+' x'+k.n+'</span>'; }).join(' ')+'</div>':''):'')+
-'<div class="panel">'+(d.list.length?'<ul class="list">'+d.list.map(function(x){ return '<li'+(d.manager?' class="click" data-inc="'+x.id+'"':'')+'><span class="dot '+(x.injured?'red':x.status==='Closed'?'grn':'amb')+'"></span><div class="grow"><div class="t">'+esc(x.ref)+' · '+esc(x.type)+'</div><div class="s">'+fmt(x.date)+' '+esc(x.time||'')+' · '+esc(x.location)+(x.kartNo?' · kart '+esc(x.kartNo):'')+(x.injured?' · <b style="color:var(--red)">injury</b>':'')+' · '+esc(x.summary)+'</div><div class="s">Reported by '+esc(x.reportedBy)+'</div></div>'+incChip(x.status)+(x.riddor==='Reportable'?'<span class="chip red">RIDDOR</span>':'')+'</li>'; }).join('')+'</ul>':'<div class="pad hint">'+(d.manager?'No incidents logged.':'You have not reported anything.')+'</div>')+'</div>';
+'<div class="panel">'+(d.list.length?'<ul class="list">'+d.list.map(function(x){ return '<li'+(d.manager?' class="click" data-inc="'+x.id+'"':'')+'><span class="dot '+(x.injured?'red':x.status==='Closed'?'grn':'amb')+'"></span><div class="grow"><div class="t">'+esc(x.ref)+' · '+esc(x.type)+'</div><div class="s">'+fmt(x.date)+' '+esc(x.time||'')+' · '+esc(x.location)+(x.kartNo?' · kart '+esc(x.kartNo):'')+(x.injured?' · <b style="color:var(--red)">injury</b>':'')+' · '+esc(x.summary)+'</div><div class="s">Reported by '+esc(x.reportedBy)+'</div></div>'+fuChip(x.followUp)+incChip(x.status)+(x.riddor==='Reportable'?'<span class="chip red">RIDDOR</span>':'')+'</li>'; }).join('')+'</ul>':'<div class="pad hint">'+(d.manager?'No incidents logged.':'You have not reported anything.')+'</div>')+'</div>';
 $('#incnew').onclick=function(){ incidentSheet(); };
 m.querySelectorAll('[data-inc]').forEach(function(r){ r.onclick=function(){ incidentView(r.dataset.inc); }; });
 }
@@ -1929,7 +1929,7 @@ row('Kart',x.kartNo?x.kartNo+(x.kartQuarantined==='Yes'?', taken out of use':'')
 (x.reviewBy?row('Reviewed by',x.reviewBy+' '+fmt(x.reviewAt)):'')+'</dl>'+
 (x.photos.length?'<div class="pad" style="display:flex;gap:8px;flex-wrap:wrap;padding-top:0">'+x.photos.map(function(p,i){ return '<button class="btn sm" data-ph="'+p+'">Photo '+(i+1)+'</button>'; }).join('')+'</div>':'')+
 (x.tasks.length?'<ul class="list">'+x.tasks.map(function(t){ return '<li><span class="dot '+(t.status==='Done'?'grn':'amb')+'"></span><div class="grow"><div class="t">'+esc(t.title)+'</div></div><span class="chip">'+esc(t.status)+'</span></li>'; }).join('')+'</ul>':'')+
-'<form class="pad form" id="irf" style="border-top:1px solid var(--line)"><div class="inc-sec" style="border:0;margin:0;padding:0">Review</div>'+
+fuSection(x)+'<form class="pad form" id="irf" style="border-top:1px solid var(--line)"><div class="inc-sec" style="border:0;margin:0;padding:0">Review</div>'+
 '<label class="f">RIDDOR<select class="inp" id="ir_r">'+mopt(['Not assessed','Not reportable','Reportable','Reported'], x.riddor)+'</select></label><label class="f">HSE reference<input class="inp" id="ir_ref" value="'+esc(x.riddorRef||'')+'"></label>'+
 '<label class="f wide">What caused it<textarea class="inp" rows="2" id="ir_rc">'+esc(x.rootCause||'')+'</textarea></label><label class="f wide">What we will do to stop it happening again<textarea class="inp" rows="2" id="ir_pv">'+esc(x.preventive||'')+'</textarea></label>'+
 '<label class="check wide"><input type="checkbox" id="ir_t"> Make the action above a task for me</label><div class="wide" id="irmsg"></div></form></div>'+
@@ -1938,6 +1938,7 @@ el.querySelectorAll('[data-ph]').forEach(function(b){ b.onclick=function(){ show
 var send=function(close){ call('reviewIncident',{id:x.id, riddor:$('#ir_r',el).value, riddorRef:$('#ir_ref',el).value, rootCause:$('#ir_rc',el).value, preventive:$('#ir_pv',el).value, task:$('#ir_t',el).checked, close:close})
 .then(function(){ sh.close(); toast(close?'Incident closed':'Review saved'); VIEWS.incidents(); }).catch(function(e){ $('#irmsg',el).innerHTML=errBox(e); }); };
 $('#irsave',el).onclick=function(){ send(false); }; if ($('#irclose',el)) $('#irclose',el).onclick=function(){ send(true); };
+fuBind(el, x, sh);
 }).catch(function(e){ toast(e.message); });
 }
 function payrollSheet(d){
@@ -2733,6 +2734,35 @@ call('mgrFileSave',{id:f.id, name:$('#mf_n',el).value, expires:$('#mf_e',el).val
 $('#mf_del',el).onclick=function(){ if(!confirmBox('Delete '+f.name+'? It goes to the bin in Google Drive for 30 days.')) return; call('mgrDelete',{id:f.id}).then(function(r){ sh.close(); toast('Deleted'); S.mgr.folder=d.folder; VIEWS.mgrdocs(); }).catch(function(e){ toast(e.message); }); };
 }
 (function(){ var st=document.createElement('style'); st.textContent='.mg-ic{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:34px;border-radius:8px;background:var(--sunk);font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted)}.mg-ic.fold{background:var(--gold-soft,#fff3d6);color:var(--gold,#c8961e)}.mg-ic svg{width:18px;height:18px}#mg_drop.mg-over{outline:2px dashed var(--gold,#c8961e);outline-offset:-6px}'; document.head.appendChild(st); })();
+function fuChip(f){ if(!f) return ''; if(f.status==='Done') return '<span class="chip grn">Followed up</span>'; if(!f.open) return ''; return '<span class="chip '+(f.overdue?'red':'amb')+'">Follow up '+(f.overdue?'overdue':'due '+fmt(f.due))+'</span>'; }
+function fuSection(x){
+var f=x.followUp; if(!f) return '';
+var log=x.followUps||[];
+return '<div class="pad" style="border-top:1px solid var(--line)" id="fu_box"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div class="inc-sec" style="border:0;margin:0;padding:0;flex:1">Follow up</div>'+fuChip(f)+
+'<label class="check" style="margin:0"><input type="checkbox" id="fu_need"'+(f.needed?' checked':'')+(f.status==='Done'?' disabled':'')+'> Follow up needed</label></div>'+
+(f.needed&&f.status!=='Done'?'<p class="hint" style="margin:0 0 10px">Get back in touch, ask how they are and log what was said. Show you care, keep to the facts, and do not admit liability or guess at the cause. Anything about a claim goes to the insurer.</p>':'')+
+(f.status==='Done'?'<div class="panel pad" style="margin-bottom:10px;border-left:4px solid var(--green)"><b>Outcome: '+esc(f.outcome)+'</b>'+(f.outcomeNotes?'<p style="margin:6px 0 0">'+esc(f.outcomeNotes)+'</p>':'')+'<div class="hint" style="margin-top:4px">'+esc(f.outcomeBy)+' · '+esc(dhm(f.outcomeAt))+'</div><button class="btn sm" id="fu_reopen" style="margin-top:8px">Reopen follow up</button></div>':'')+
+(log.length?'<ul class="list" style="border:1px solid var(--line);border-radius:10px;margin-bottom:10px">'+log.map(function(l){ return '<li style="align-items:flex-start"><div class="grow"><div class="t">'+esc(l.method)+(l.withWho?' with '+esc(l.withWho):'')+(l.result?' · '+esc(l.result):'')+'</div><div class="s" style="white-space:pre-wrap">'+esc(l.notes)+'</div>'+(l.nextStep?'<div class="s"><b>Next:</b> '+esc(l.nextStep)+(l.nextDue?' by '+fmt(l.nextDue):'')+'</div>':'')+'<div class="s hint">'+esc(l.by)+' · '+esc(dhm(l.at))+'</div></div></li>'; }).join('')+'</ul>':'')+
+(f.needed&&f.status!=='Done'?
+'<div class="form" style="padding:0" id="fuf"><label class="f">How<select class="inp" id="fu_m">'+mopt(x.fuMethods,'Phone call')+'</select></label><label class="f">Who with<input class="inp" id="fu_w" value="'+esc(x.guardian||x.personName||'')+'" placeholder="Name, or parent or guardian"></label>'+
+'<label class="f">When<input class="inp" type="datetime-local" id="fu_at"></label><label class="f">Result<select class="inp" id="fu_r">'+mopt(x.fuResults,'Spoke to them')+'</select></label>'+
+'<label class="f wide">What was said<textarea class="inp" rows="3" id="fu_n" placeholder="How they are, anything they asked for, what you told them"></textarea></label>'+
+'<label class="f">Next step (optional)<input class="inp" id="fu_ns" placeholder="For example call again Friday"></label><label class="f">Next contact by<input class="inp" type="date" id="fu_nd" value="'+esc(f.due||'')+'"></label>'+
+'<label class="f">Outcome<select class="inp" id="fu_o"><option value="">Not finished yet</option>'+mopt(x.fuOutcomes,'')+'</select></label><label class="f">Outcome notes<input class="inp" id="fu_on" placeholder="Only if the follow up is finished"></label>'+
+'<div class="wide" id="fumsg"></div><div class="wide"><button class="btn pri" id="fu_go" type="button">Log follow up</button></div></div>':'')+
+'</div>';
+}
+function fuBind(el, x, sh){
+var reload=function(r){ sh.close(); incidentView(r.id); VIEWS.incidents(); };
+var at=$('#fu_at',el); if(at){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); at.value=d.toISOString().slice(0,16); }
+var need=$('#fu_need',el); if(need) need.onchange=function(){ var v=need.checked; if(!v&&!confirmBox('No follow up needed for '+x.ref+'?')){ need.checked=true; return; } call('setFollowUp',{id:x.id, needed:v}).then(reload).catch(function(e){ toast(e.message); need.checked=!v; }); };
+var ro=$('#fu_reopen',el); if(ro) ro.onclick=function(){ call('setFollowUp',{id:x.id, reopen:true}).then(reload).catch(function(e){ toast(e.message); }); };
+var o=$('#fu_o',el); if(o) o.onchange=function(){ $('#fu_go',el).textContent=o.value?'Log and finish follow up':'Log follow up'; };
+var go=$('#fu_go',el); if(go) go.onclick=function(){ var b=this; b.disabled=true;
+call('logFollowUp',{id:x.id, method:$('#fu_m',el).value, withWho:$('#fu_w',el).value, at:$('#fu_at',el).value, result:$('#fu_r',el).value, notes:$('#fu_n',el).value,
+nextStep:$('#fu_ns',el).value, nextDue:$('#fu_nd',el).value, outcome:$('#fu_o',el).value, outcomeNotes:$('#fu_on',el).value})
+.then(function(r){ toast(r.followUp.status==='Done'?'Follow up finished':'Follow up logged'); reload(r); }).catch(function(e){ $('#fumsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
 var who = offline?offline.name:(S.me.firstName+' '+S.me.lastName);
