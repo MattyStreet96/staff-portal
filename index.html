@@ -2852,11 +2852,11 @@ $('#ve_go',el).onclick=function(){ var b=this; b.disabled=true;
 call('voucherSave',{id:v.id, company:d.company, code:g('ve_code'), product:g('ve_prod'), alphaProduct:g('ve_alpha'), value:g('ve_val'), qty:g('ve_qty'), holder:g('ve_h'), email:g('ve_e'), phone:g('ve_ph'), purchaser:g('ve_pu'), purchasedOn:g('ve_on'), expires:g('ve_ex'), notes:g('ve_no')})
 .then(function(r){ sh.close(); toast('Saved'); S.vch.q=''; drawVouchers(r); }).catch(function(e){ $('#vemsg',el).innerHTML=errBox(e); b.disabled=false; }); };
 }
-var V_COLS={code:/code|voucher|ref|number|serial/i, product:/product|item|package|description|type|experience/i, value:/value|amount|price|balance|£/i, qty:/qty|quantity|places|drivers/i,
+var V_COLS={code:/code|voucher|ref|number|serial/i, product:/product|item|package|description|type|experience|setup/i, value:/liabil|value|amount|price|£/i, qty:/qty|quantity|places|drivers/i,
 holder:/recipient|holder|for$|name|customer/i, email:/e-?mail/i, phone:/phone|mobile|tel/i, purchaser:/purchas|buyer|bought by|from/i, purchasedOn:/purchase.*date|sold|bought on|created|issued|order date/i,
-expires:/expir|valid until|valid to|end date|use by/i, status:/status|redeemed|used/i, notes:/note|comment|message/i};
+expires:/expir|valid until|valid to|end date|use by/i, status:/status|redeemed|used/i, notes:/note|comment|message|memo/i};
 function parseTable(text){
-var rows=[], row=[], cell='', q=false, sep=text.indexOf('\t')>=0&&text.split('\n')[0].indexOf('\t')>=0?'\t':',';
+var rows=[], row=[], cell='', q=false, h0=text.split('\n')[0], sep=h0.indexOf('\t')>=0?'\t':(h0.split(';').length>h0.split(',').length?';':',');
 for (var i=0;i<text.length;i++){ var c=text[i];
 if (q){ if(c==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=c; }
 else if (c==='"') q=true; else if (c===sep){ row.push(cell); cell=''; } else if (c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; } else cell+=c; }
