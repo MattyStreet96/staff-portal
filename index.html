@@ -447,7 +447,7 @@ function initials(n){ return String(n||'?').split(' ').map(function(x){return x[
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function hasMod(m){ return !!(S.me && (S.me.modules||[]).indexOf(m)>=0); }
 function isMgr(){ return hasMod('dashboard'); }
-var VIEW_MOD={mgrdocs:'mgrdocs',moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
+var VIEW_MOD={vouchers:'cashup',mgrdocs:'mgrdocs',moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
 function canView(v){ return !!VIEWS[v] && (!VIEW_MOD[v] || hasMod(VIEW_MOD[v])); }
 function stateChip(st, dueSoon){
 if (st==='Signed') return dueSoon ? '<span class="chip amb">Re-sign soon</span>' : '<span class="chip grn">Signed</span>';
@@ -2001,7 +2001,7 @@ ICON.access='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><pa
 function navTabs(){
 var t=[], add=function(v,l,m){ if(!m||hasMod(m)) t.push([v,l]); };
 add('dash','Dashboard','dashboard'); if(!isMgr()) t.push(['home','Home']);
-add('tasks','Tasks','tasks'); t.push(['checks','Checks']); add('cashup','Cash up','cashup'); t.push(['incidents','Incidents']); add('garage','Garage','garage');
+add('tasks','Tasks','tasks'); t.push(['checks','Checks']); add('cashup','Cash up','cashup'); add('vouchers','Vouchers','cashup'); t.push(['incidents','Incidents']); add('garage','Garage','garage');
 add('rota','Rota','rota'); if(hasMod('timesheets')&&!hasMod('rota')) t.push(['timesheets','Timesheets']);
 if(hasMod('staff')) t.push(['staff','Staff']); else if(hasMod('absence')) t.push(['absence','Absence']);
 add('contracts','Contracts','contracts');
@@ -2762,6 +2762,149 @@ var go=$('#fu_go',el); if(go) go.onclick=function(){ var b=this; b.disabled=true
 call('logFollowUp',{id:x.id, method:$('#fu_m',el).value, withWho:$('#fu_w',el).value, at:$('#fu_at',el).value, result:$('#fu_r',el).value, notes:$('#fu_n',el).value,
 nextStep:$('#fu_ns',el).value, nextDue:$('#fu_nd',el).value, outcome:$('#fu_o',el).value, outcomeNotes:$('#fu_on',el).value})
 .then(function(r){ toast(r.followUp.status==='Done'?'Follow up finished':'Follow up logged'); reload(r); }).catch(function(e){ $('#fumsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+VIEWS.vouchers = function(){
+var m=$('#main'); busy(m); S.vch=S.vch||{q:'', status:'Active', company:''};
+call('vouchers',{q:S.vch.q, status:S.vch.status, company:S.vch.company}).then(drawVouchers).catch(function(e){ m.innerHTML=errBox(e); });
+};
+function vChip(s){ return '<span class="chip '+(s==='Active'?'grn':s==='Redeemed'?'gold':s==='Expired'?'amb':'')+'">'+esc(s)+'</span>'; }
+function vWhat(v){ return [v.product, v.qty?v.qty+' x':'', v.value!==''&&v.value!=null?gbp(v.value):''].filter(Boolean).join(' · ')||'Voucher'; }
+function drawVouchers(d){
+S.vch.company=d.company; S.data.vch=d; var m=$('#main'), s=d.stats;
+var tab=function(id,l,n){ return '<button data-vs="'+id+'" aria-pressed="'+(!d.q&&d.status===id)+'">'+l+(n!=null?' ('+n+')':'')+'</button>'; };
+m.innerHTML='<div class="head"><div><div class="eyebrow">'+esc(d.company)+' · BMI vouchers</div><h1>Vouchers</h1><p>Vouchers bought on the old BMI system. Look up the code, book them into Alpha, then mark the voucher redeemed with the Alpha booking reference. Each voucher can only be used once.</p></div>'+
+'<div class="acts">'+coSelect(d,'vc_co')+(d.manager?'<button class="btn" id="vc_csv">Download</button><button class="btn" id="vc_add">Add a voucher</button><button class="btn pri" id="vc_imp">Import from BMI</button>':'')+'</div></div>'+
+'<div class="panel pad" style="margin-bottom:14px"><form id="vc_ff" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end"><label class="f" style="margin:0;flex:1;min-width:220px">Voucher code<input class="inp" id="vc_code" autocomplete="off" autocapitalize="characters" placeholder="Type or scan the code" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase"></label><button class="btn pri" type="submit" style="height:46px">Find voucher</button></form>'+
+'<div id="vc_hit"></div></div>'+
+'<div class="board"><div class="hi"><b class="num">'+s.active+'</b><span>Active vouchers</span></div><div><b class="num">'+gbp0(s.activeValue)+'</b><span>Active value</span></div><div class="'+(s.expiringSoon?'warn':'')+'"><b class="num">'+s.expiringSoon+'</b><span>Expire in 30 days</span></div><div><b class="num">'+s.redeemed+'</b><span>Redeemed</span></div><div><b class="num">'+s.expired+'</b><span>Expired</span></div></div>'+
+'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0"><div class="seg" role="group">'+tab('Active','Active',s.active)+tab('Redeemed','Redeemed',s.redeemed)+tab('Expired','Expired',s.expired)+tab('Cancelled','Cancelled',s.cancelled)+tab('All','All',s.total)+'</div>'+
+'<input class="inp" id="vc_q" placeholder="Search name, email, phone or code" value="'+esc(d.q)+'" style="flex:1;min-width:200px"></div>'+
+'<div class="panel">'+(d.list.length?'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Code</th><th>Holder</th><th>What for</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>'+
+d.list.map(function(v){ return '<tr class="click" data-v="'+esc(v.id)+'"><td><b style="font-family:monospace">'+esc(v.code)+'</b></td><td>'+esc(v.holder||v.purchaser||'')+'<div class="hint">'+esc(v.email||v.phone||'')+'</div></td><td>'+esc(vWhat(v))+'</td><td>'+(v.expires?fmt(v.expires):'<span class="hint">None</span>')+'</td><td>'+vChip(v.status)+(v.status==='Redeemed'?'<div class="hint">'+fmt(v.redeemedAt)+' · '+esc(v.redeemedRef)+'</div>':'')+'</td><td>'+(v.status==='Active'||(d.manager&&v.status==='Expired')?'<button class="btn sm pri" data-rd="'+esc(v.id)+'">Redeem</button>':'')+'</td></tr>'; }).join('')+
+'</tbody></table></div>'+(d.more?'<p class="pad hint" style="margin:0">'+d.more+' more. Search to narrow it down.</p>':''):'<p class="pad hint">'+(d.q?'Nothing matches that search.':s.total?'None in this list.':(d.manager?'No vouchers stored yet. Use Import from BMI to load the export.':'No vouchers stored yet. A manager needs to import them.'))+'</p>')+'</div>';
+var byId=function(id){ return d.list.filter(function(v){ return v.id===id; })[0]; };
+m.querySelectorAll('[data-vs]').forEach(function(b){ b.onclick=function(){ S.vch.status=b.dataset.vs; S.vch.q=''; VIEWS.vouchers(); }; });
+m.querySelectorAll('[data-v]').forEach(function(r){ r.onclick=function(){ voucherSheet(byId(r.dataset.v), d); }; });
+m.querySelectorAll('[data-rd]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); redeemSheet(byId(b.dataset.rd), d); }; });
+var qt; $('#vc_q').oninput=function(){ var v=this.value; clearTimeout(qt); qt=setTimeout(function(){ S.vch.q=v.trim(); VIEWS.vouchers(); setTimeout(function(){ var i=$('#vc_q'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length); } },60); }, 500); };
+$('#vc_ff').onsubmit=function(e){ e.preventDefault(); var c=$('#vc_code').value.trim(); if(!c) return; var box=$('#vc_hit'); box.innerHTML='<p class="hint">Looking...</p>';
+call('voucherFind',{code:c, company:d.company}).then(function(r){ var v=r.voucher;
+box.innerHTML='<div class="panel pad" style="margin-top:12px;border-left:4px solid var(--'+(v.status==='Active'?'green':v.status==='Redeemed'?'red':'amber')+')"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-family:monospace;font-size:18px">'+esc(v.code)+'</b>'+vChip(v.status)+'</div>'+
+'<p style="margin:6px 0 0"><b>'+esc(vWhat(v))+'</b>'+(v.holder?' for '+esc(v.holder):'')+(v.expires?' · expires '+fmt(v.expires):'')+'</p>'+(v.notes?'<p class="hint" style="margin:4px 0 0">'+esc(v.notes)+'</p>':'')+
+(v.status==='Redeemed'?'<p style="margin:8px 0 0;color:var(--red)"><b>Already used</b> on '+fmt(v.redeemedAt)+' by '+esc(v.redeemedBy)+', Alpha booking '+esc(v.redeemedRef)+'. Do not book it again.</p>':'')+
+(v.status==='Expired'?'<p style="margin:8px 0 0;color:var(--amber,#b86e00)"><b>Expired.</b> '+(d.manager?'You can still honour it.':'Ask a manager before booking.')+'</p>':'')+
+(v.status==='Cancelled'?'<p style="margin:8px 0 0">Cancelled. Speak to a manager.</p>':'')+
+(v.status==='Active'||(d.manager&&v.status==='Expired')?'<button class="btn pri" id="vc_go" style="margin-top:10px">Redeem this voucher</button>':'')+'</div>';
+var g=$('#vc_go'); if(g) g.onclick=function(){ redeemSheet(v, d); };
+}).catch(function(e){ box.innerHTML='<div style="margin-top:12px">'+errBox(e)+'</div>'; }); };
+if ($('#vc_co')) $('#vc_co').onchange=function(){ S.vch.company=this.value; VIEWS.vouchers(); };
+if ($('#vc_imp')) $('#vc_imp').onclick=function(){ voucherImportSheet(d); };
+if ($('#vc_add')) $('#vc_add').onclick=function(){ voucherEditSheet(null, d); };
+if ($('#vc_csv')) $('#vc_csv').onclick=function(){ call('vouchers',{status:'All', company:d.company, all:true}).then(function(r){ voucherCsv(r); }).catch(function(e){ toast(e.message); }); };
+setTimeout(function(){ var c=$('#vc_code'); if(c&&!d.q) c.focus(); }, 50);
+}
+function alphaOpts(d, sel){
+var cats={}; d.alpha.forEach(function(a){ (cats[a.cat]=cats[a.cat]||[]).push(a); });
+return '<option value="">Choose the Alpha activity</option>'+Object.keys(cats).map(function(c){ return '<optgroup label="'+esc(c)+'">'+cats[c].map(function(a){ return '<option'+(a.name===sel?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</optgroup>'; }).join('');
+}
+function redeemSheet(v, d){
+if (!v) return;
+var exp=v.status==='Expired';
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:600px"><div class="sheet-h"><div><div class="eyebrow">Redeem voucher</div><h2 style="font-family:monospace">'+esc(v.code)+'</h2><p class="hint" style="margin:4px 0 0">'+esc(vWhat(v))+(v.holder?' · '+esc(v.holder):'')+(v.expires?' · expires '+fmt(v.expires):'')+'</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="rdf">'+(exp?'<div class="wide err">This voucher expired on '+fmt(v.expires)+'. Only redeem it if you have decided to honour it.</div>':'')+
+'<div class="wide panel pad" style="margin:0"><b>1.</b> Pick the activity and open Alpha to book them in.<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><select class="inp" id="rd_p" style="flex:1;min-width:220px">'+alphaOpts(d, v.alphaProduct)+'</select><a class="btn" id="rd_open" target="_blank" rel="noopener">Open in Alpha</a></div><div class="hint" id="rd_note" style="margin-top:6px"></div></div>'+
+'<div class="wide panel pad" style="margin:0"><b>2.</b> Make the booking in Alpha. Take payment as nil or put it against the voucher, the way the team has been shown.</div>'+
+'<label class="f"><b>3.</b> Alpha booking reference<input class="inp" id="rd_ref" required placeholder="From the Alpha confirmation"></label><label class="f">Note (optional)<input class="inp" id="rd_n" placeholder="For example booked for Saturday 2pm"></label>'+
+'<div class="wide" id="rdmsg"></div></form><div class="sheet-f"><button class="btn pri" id="rd_go">Mark as redeemed</button></div></div>'), el=sh.el;
+var upd=function(){ var a=d.alpha.filter(function(x){ return x.name===$('#rd_p',el).value; })[0], o=$('#rd_open',el);
+if(a){ o.href=a.link; o.removeAttribute('aria-disabled'); o.style.pointerEvents=''; o.style.opacity=''; $('#rd_note',el).textContent=(a.qty>1?'Opens with '+a.qty+' places selected. ':'')+(a.notes||''); }
+else { o.removeAttribute('href'); o.style.pointerEvents='none'; o.style.opacity='.5'; $('#rd_note',el).textContent=v.product?'On BMI this was: '+v.product:''; } };
+$('#rd_p',el).onchange=upd; upd();
+$('#rd_go',el).onclick=function(){ if(!$('#rdf',el).reportValidity()) return; var b=this; b.disabled=true;
+call('voucherRedeem',{id:v.id, product:$('#rd_p',el).value, ref:$('#rd_ref',el).value, note:$('#rd_n',el).value, allowExpired:exp}).then(function(r){ sh.close(); toast(v.code+' redeemed'); S.vch.q=''; VIEWS.vouchers(); })
+.catch(function(e){ $('#rdmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+function voucherSheet(v, d){
+if (!v) return;
+var row=function(a,b){ return b||b===0?'<dt>'+esc(a)+'</dt><dd>'+esc(b)+'</dd>':''; };
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:600px"><div class="sheet-h"><div><div class="eyebrow">'+esc(v.source||'Voucher')+'</div><h2 style="font-family:monospace">'+esc(v.code)+' '+vChip(v.status)+'</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div><div class="sheet-b">'+
+'<dl class="kv2">'+row('What for',v.product)+row('Alpha activity',v.alphaProduct)+row('Value',v.value!==''&&v.value!=null?gbp(v.value):'')+row('Quantity',v.qty)+row('Holder',v.holder)+row('Email',v.email)+row('Phone',v.phone)+row('Bought by',v.purchaser)+row('Bought on',v.purchasedOn?fmt(v.purchasedOn):'')+row('Expires',v.expires?fmt(v.expires):'')+row('Notes',v.notes)+
+(v.status==='Redeemed'?row('Redeemed',fmt(v.redeemedAt)+' by '+v.redeemedBy)+row('Alpha booking',v.redeemedRef)+row('Booked on',v.redeemedProduct)+row('Note',v.redeemedNote):'')+'</dl></div>'+
+'<div class="sheet-f" style="gap:8px;flex-wrap:wrap">'+(d.manager?(v.status==='Redeemed'?'<button class="btn" id="vs_undo">Undo redemption</button>':'')+(v.status==='Cancelled'?'<button class="btn" id="vs_rest">Restore</button>':(v.status!=='Redeemed'?'<button class="btn" id="vs_can" style="color:var(--red)">Cancel voucher</button>':''))+'<button class="btn" id="vs_edit">Edit</button>':'')+
+(v.status==='Active'||(d.manager&&v.status==='Expired')?'<button class="btn pri" id="vs_rd">Redeem</button>':'')+'</div></div>'), el=sh.el;
+var act=function(a, ask){ var r=ask?window.prompt(ask):''; if(ask&&r===null) return; call('voucherStatus',{id:v.id, action:a, reason:r}).then(function(){ sh.close(); toast('Done'); VIEWS.vouchers(); }).catch(function(e){ toast(e.message); }); };
+var b;
+if ((b=$('#vs_undo',el))) b.onclick=function(){ act('undo','Why is the redemption being undone? The voucher becomes active again.'); };
+if ((b=$('#vs_can',el))) b.onclick=function(){ act('cancel','Why is this voucher being cancelled? For example refunded.'); };
+if ((b=$('#vs_rest',el))) b.onclick=function(){ act('restore'); };
+if ((b=$('#vs_edit',el))) b.onclick=function(){ sh.close(); voucherEditSheet(v, d); };
+if ((b=$('#vs_rd',el))) b.onclick=function(){ sh.close(); redeemSheet(v, d); };
+}
+function voucherEditSheet(v, d){
+v=v||{}; var f=function(id,l,val,t,ph){ return '<label class="f">'+l+'<input class="inp" id="'+id+'" type="'+(t||'text')+'" value="'+esc(val==null?'':val)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>'; };
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:620px"><div class="sheet-h"><div><div class="eyebrow">Vouchers</div><h2>'+(v.id?'Edit '+esc(v.code):'Add a voucher')+'</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<form class="sheet-b pad form" id="vef">'+f('ve_code','Code',v.code)+f('ve_prod','What it is for (BMI product)',v.product)+
+'<label class="f">Alpha activity<select class="inp" id="ve_alpha">'+alphaOpts(d, v.alphaProduct)+'</select></label>'+f('ve_val','Value (£)',v.value,'text','Leave blank if it is for an activity')+f('ve_qty','Quantity',v.qty,'number')+
+f('ve_h','Holder',v.holder)+f('ve_e','Email',v.email,'email')+f('ve_ph','Phone',v.phone)+f('ve_pu','Bought by',v.purchaser)+f('ve_on','Bought on',v.purchasedOn,'date')+f('ve_ex','Expires',v.expires,'date')+
+'<label class="f wide">Notes<input class="inp" id="ve_no" value="'+esc(v.notes||'')+'"></label><div class="wide" id="vemsg"></div></form><div class="sheet-f"><button class="btn pri" id="ve_go">Save</button></div></div>'), el=sh.el;
+var g=function(id){ return $('#'+id,el).value; };
+$('#ve_go',el).onclick=function(){ var b=this; b.disabled=true;
+call('voucherSave',{id:v.id, company:d.company, code:g('ve_code'), product:g('ve_prod'), alphaProduct:g('ve_alpha'), value:g('ve_val'), qty:g('ve_qty'), holder:g('ve_h'), email:g('ve_e'), phone:g('ve_ph'), purchaser:g('ve_pu'), purchasedOn:g('ve_on'), expires:g('ve_ex'), notes:g('ve_no')})
+.then(function(r){ sh.close(); toast('Saved'); S.vch.q=''; drawVouchers(r); }).catch(function(e){ $('#vemsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+var V_COLS={code:/code|voucher|ref|number|serial/i, product:/product|item|package|description|type|experience/i, value:/value|amount|price|balance|£/i, qty:/qty|quantity|places|drivers/i,
+holder:/recipient|holder|for$|name|customer/i, email:/e-?mail/i, phone:/phone|mobile|tel/i, purchaser:/purchas|buyer|bought by|from/i, purchasedOn:/purchase.*date|sold|bought on|created|issued|order date/i,
+expires:/expir|valid until|valid to|end date|use by/i, status:/status|redeemed|used/i, notes:/note|comment|message/i};
+function parseTable(text){
+var rows=[], row=[], cell='', q=false, sep=text.indexOf('\t')>=0&&text.split('\n')[0].indexOf('\t')>=0?'\t':',';
+for (var i=0;i<text.length;i++){ var c=text[i];
+if (q){ if(c==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=c; }
+else if (c==='"') q=true; else if (c===sep){ row.push(cell); cell=''; } else if (c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; } else cell+=c; }
+if (cell!==''||row.length){ row.push(cell); rows.push(row); }
+return rows.filter(function(r){ return r.some(function(x){ return String(x).trim(); }); });
+}
+function mapCols(head){
+var map={}, used={};
+['email','phone','expires','purchasedOn','purchaser','status','qty','value','code','product','notes','holder'].forEach(function(k){
+for (var i=0;i<head.length;i++){ if(used[i]) continue; if(V_COLS[k].test(head[i])){ map[k]=i; used[i]=1; break; } } });
+return map;
+}
+function voucherImportSheet(d){
+var rows=null, map={}, head=[];
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:760px"><div class="sheet-h"><div><div class="eyebrow">Vouchers</div><h2>Import from BMI</h2><p class="hint" style="margin:4px 0 0">Export the live vouchers from BMI as a CSV, or copy the rows from Excel including the heading row and paste them below. Codes already stored are skipped, and anything marked as used or redeemed is left out.</p></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<div class="sheet-b pad"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn" id="vi_pick" type="button">Choose CSV file</button><input type="file" id="vi_file" accept=".csv,.txt,text/csv" hidden><span class="hint" style="align-self:center">or paste below</span></div>'+
+'<textarea class="inp" id="vi_txt" rows="6" style="width:100%;font-family:monospace;font-size:12px" placeholder="Code, Product, Value, Recipient, Email, Phone, Expiry date..."></textarea><div id="vi_map" style="margin-top:12px"></div><div id="vimsg"></div></div>'+
+'<div class="sheet-f" style="gap:8px"><button class="btn" id="vi_check">Check</button><button class="btn pri" id="vi_go" disabled>Import</button></div></div>'), el=sh.el;
+var labels={code:'Code',product:'Product',value:'Value',qty:'Quantity',holder:'Holder',email:'Email',phone:'Phone',purchaser:'Bought by',purchasedOn:'Bought on',expires:'Expires',status:'Status',notes:'Notes'};
+var collect=function(){ return rows.slice(1).map(function(r){ var o={}; Object.keys(map).forEach(function(k){ if(map[k]!=='') o[k]=String(r[map[k]]==null?'':r[map[k]]).trim(); }); return o; }); };
+var drawMap=function(){
+$('#vi_map',el).innerHTML='<p style="margin:0 0 6px"><b>'+(rows.length-1)+' rows found.</b> Check each field points at the right column.</p><div class="form" style="padding:0">'+Object.keys(labels).map(function(k){ return '<label class="f">'+labels[k]+'<select class="inp" data-col="'+k+'"><option value="">Not in the file</option>'+head.map(function(h,i){ return '<option value="'+i+'"'+(map[k]===i?' selected':'')+'>'+esc(h||('Column '+(i+1)))+'</option>'; }).join('')+'</select></label>'; }).join('')+'</div>';
+el.querySelectorAll('[data-col]').forEach(function(s){ s.onchange=function(){ map[s.dataset.col]=s.value===''?'':Number(s.value); $('#vi_go',el).disabled=true; }; });
+};
+var load=function(text){ rows=parseTable(text); if(rows.length<2){ $('#vimsg',el).innerHTML=errBox({message:'Include the heading row and at least one voucher.'}); return; } head=rows[0].map(function(h){ return String(h).trim(); }); map=mapCols(head); drawMap(); $('#vimsg',el).innerHTML=''; $('#vi_go',el).disabled=true; };
+$('#vi_pick',el).onclick=function(){ $('#vi_file',el).click(); };
+$('#vi_file',el).onchange=function(){ var f=this.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ $('#vi_txt',el).value=r.result; load(r.result); }; r.readAsText(f); };
+$('#vi_txt',el).onchange=function(){ load(this.value); };
+var send=function(dry){ if(!rows){ load($('#vi_txt',el).value); if(!rows) return; } if(map.code===undefined||map.code===''){ $('#vimsg',el).innerHTML=errBox({message:'Pick which column holds the voucher code.'}); return; }
+var b=$(dry?'#vi_check':'#vi_go',el); b.disabled=true;
+var all=collect(), chunks=[]; for(var i=0;i<all.length;i+=dry?100000:150) chunks.push(all.slice(i,i+(dry?100000:150)));
+var tot={dryRun:dry,added:0,duplicates:0,used:0,bad:[],sample:[],unmatched:[]};
+var run=function(n){ if(n>=chunks.length) return Promise.resolve(tot); if(!dry&&chunks.length>1) toast('Importing '+(n*150+1)+' to '+Math.min((n+1)*150,all.length)+' of '+all.length+'...');
+return call('voucherImport',{company:d.company, rows:chunks[n], dryRun:dry}).then(function(r){ tot.added+=r.added; tot.duplicates+=r.duplicates; tot.used+=r.used; tot.bad=tot.bad.concat(r.bad); tot.sample=tot.sample.concat(r.sample).slice(0,5); r.unmatched.forEach(function(u){ if(tot.unmatched.indexOf(u)<0) tot.unmatched.push(u); }); return run(n+1); }); };
+run(0).then(function(r){ b.disabled=false;
+$('#vimsg',el).innerHTML='<div class="'+(r.added?'ok':'err')+'" style="margin-top:12px"><b>'+(dry?'Ready to import ':'Imported ')+r.added+' voucher'+(r.added===1?'':'s')+'.</b>'+(r.duplicates?' '+r.duplicates+' already stored, skipped.':'')+(r.used?' '+r.used+' already used on BMI, left out.':'')+(r.bad.length?'<br>'+esc(r.bad.join('; ')):'')+
+(r.unmatched.length?'<br>No Alpha activity matched for: '+esc(r.unmatched.join(', '))+'. Reception picks the activity when they redeem.':'')+
+(dry&&r.sample.length?'<br><span class="hint">For example: '+esc(r.sample.map(function(x){ return x.code+' '+(x.holder||'')+' '+(x.product||'')+(x.expires?' exp '+x.expires:''); }).join(' | '))+'</span>':'')+'</div>';
+if (dry) $('#vi_go',el).disabled=!r.added; else { sh.close(); toast(r.added+' voucher'+(r.added===1?'':'s')+' imported'+(r.used?', '+r.used+' already used left out':'')); S.vch={q:'',status:'Active',company:d.company}; VIEWS.vouchers(); }
+}).catch(function(e){ b.disabled=false; $('#vimsg',el).innerHTML=errBox(e); }); };
+$('#vi_check',el).onclick=function(){ send(true); };
+$('#vi_go',el).onclick=function(){ if(confirmBox('Import these vouchers?')) send(false); };
+}
+function voucherCsv(d){
+var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+var lines=[['Code','Status','Product','Alpha activity','Value','Quantity','Holder','Email','Phone','Bought by','Bought on','Expires','Redeemed on','Redeemed by','Alpha booking','Booked on','Notes'].join(',')];
+d.list.forEach(function(v){ lines.push([v.code,v.status,v.product,v.alphaProduct,v.value,v.qty,v.holder,v.email,v.phone,v.purchaser,v.purchasedOn,v.expires,v.redeemedAt?v.redeemedAt.slice(0,10):'',v.redeemedBy,v.redeemedRef,v.redeemedProduct,v.notes].map(q).join(',')); });
+var blob=new Blob([lines.join('\r\n')],{type:'text/csv'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=d.company.replace(/\s+/g,'-')+'-vouchers-'+toYmd(new Date())+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
