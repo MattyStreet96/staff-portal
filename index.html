@@ -410,6 +410,10 @@ button.av{width:36px;height:36px}
 .inp,select.inp,textarea.inp{font-size:16px}
 }
 @media (max-width:360px){.logout span{display:none}.logout{padding:0 10px}}
+.top.many .who .nm{display:none}
+.top.many .tag{display:none}
+@media (min-width:761px) and (max-width:1000px){.top.many .tabs button svg{display:none}.top.many .tabs button{padding:8px 8px}.top.many .logout span{display:none}}
+@media (min-width:761px) and (max-width:820px){.top.many button.av{display:none}.top.many .tabs button{padding:8px 6px}}
 </style>
 <div id="app"></div>
 <script>
@@ -501,7 +505,7 @@ var gBtn = function(g){ return '<button data-grp="'+g.id+'" '+(cg&&cg.id===g.id?
 var tabBtns = groups.map(gBtn).join('');
 var sub = cg && cg.items.length>1 ? '<nav class="subnav" aria-label="'+esc(cg.label)+'"><div class="subnav-in">'+cg.items.map(function(t){ return '<button data-go="'+t[0]+'" '+(at.v===t[0]?'aria-current="page"':'')+'>'+esc(t[1])+'</button>'; }).join('')+'</div></nav>' : '';
 return demoStrip() +
-'<header class="top"><div class="top-in"><img class="logo" src="'+LOGO+'" alt="TeamKarting"><span class="tag">Staff portal</span>'+
+'<header class="top'+(groups.length>5?' many':'')+'"><div class="top-in"><img class="logo" src="'+LOGO+'" alt="TeamKarting"><span class="tag">Staff portal</span>'+
 '<nav class="tabs" aria-label="Main">'+tabBtns+'</nav>'+
 '<div class="who"><div class="nm">'+esc(S.me.firstName+' '+S.me.lastName)+'<br><span style="opacity:.6">'+esc(S.me.jobRole)+' · '+esc(S.me.access)+'</span></div>'+
 '<button class="av" data-go="me" title="My details" aria-label="My details">'+initials(S.me.firstName+' '+S.me.lastName)+'</button>'+
