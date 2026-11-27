@@ -400,6 +400,7 @@ button.av{width:36px;height:36px}
 .btabs button{flex:1 1 0;min-width:0;max-width:120px;padding:8px 2px 6px;font-size:11px;min-height:54px}
 .btabs button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .btabs svg{width:22px;height:22px}
+.btabs.many button{font-size:10px;padding:8px 1px 6px;letter-spacing:-.1px;flex:1 1 auto}
 .subnav-in{padding-top:7px;padding-bottom:7px}
 .subnav button{font-size:13px;padding:6px 12px;min-height:36px}
 .rboard{grid-template-columns:repeat(3,1fr);overflow:visible}
@@ -471,7 +472,7 @@ var ICON = (function(){ var p={dash:'M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-
 docs:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z',training:'M12 3 1 9l11 6 9-4.9V17h2V9zM5 13.2v3.8l7 4 7-4v-3.8L12 17z',
 rota:'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zM7 12h5v5H7z',home:'M12 3 2 12h3v8h6v-6h2v6h6v-8h3z',
 me:'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z',left:'M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z',right:'M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z',plus:'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z',tasks:'M19 3h-4.2a3 3 0 0 0-5.6 0H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1-1 1 1 1 0 0 1 1-1zm-2 14-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z',checks:'M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5zm-2 16-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z'};
-p.g_ops='M19 3h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1-1 1 1 1 0 0 1 1-1zm-2 14-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z'; p.g_money='M19 14V6a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zm-9-1a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm13-6v11a2 2 0 0 1-2 2H4v-2h17V7z'; p.g_mgmt='M10 16v-1H3v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-7v1zm10-9h-4V5l-2-2h-4L8 5v2H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h6v-2h4v2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-6 0h-4V5h4z'; p.logout='M17 7l-1.4 1.4 2.6 2.6H8v2h10.2l-2.6 2.6L17 17l5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4z'; p.checks=p.checks||'M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5zm-2 16-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z'; p.incidents=p.incidents||'M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z';
+p.g_ops='M19 3h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1-1 1 1 1 0 0 1 1-1zm-2 14-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z'; p.g_money='M19 14V6a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zm-9-1a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm13-6v11a2 2 0 0 1-2 2H4v-2h17V7z'; p.g_mgmt='M10 16v-1H3v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-7v1zm10-9h-4V5l-2-2h-4L8 5v2H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h6v-2h4v2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-6 0h-4V5h4z'; p.logout='M17 7l-1.4 1.4 2.6 2.6H8v2h10.2l-2.6 2.6L17 17l5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4z'; p.checks=p.checks||'M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5zm-2 16-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z'; p.marketing='M18 11v2h4v-2h-4zm-2 6.6c1 .7 2.2 1.6 3.2 2.4.4-.5.8-1.1 1.2-1.6-1-.8-2.3-1.7-3.2-2.4-.4.5-.8 1.1-1.2 1.6zM20.4 5.6c-.4-.5-.8-1.1-1.2-1.6-1 .7-2.2 1.6-3.2 2.4.4.5.8 1.1 1.2 1.6 1-.7 2.2-1.6 3.2-2.4zM4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.3-.6-2.5-1.5-3.4v6.7c.9-.8 1.5-2 1.5-3.3z'; p.incidents=p.incidents||'M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z';
 var o={}; Object.keys(p).forEach(function(k){ o[k]='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+p[k]+'"/></svg>'; }); o.g_me=o.me; o.mydocs=o.docs; o.mytraining=o.training; o.myrota=o.rota; o.requests=o.rota; return o; })();
 function $(s, r){ return (r||document).querySelector(s); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -480,7 +481,7 @@ function initials(n){ return String(n||'?').split(' ').map(function(x){return x[
 function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 function hasMod(m){ return !!(S.me && (S.me.modules||[]).indexOf(m)>=0); }
 function isMgr(){ return hasMod('dashboard'); }
-var VIEW_MOD={vouchers:'cashup',mgrdocs:'mgrdocs',moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
+var VIEW_MOD={marketing:'marketing',vouchers:'cashup',mgrdocs:'mgrdocs',moneyreport:'cashreview',garage:'garage',dash:'dashboard',tasks:'tasks',checkadmin:'checkadmin',checkhistory:'checkadmin',cashup:'cashup',cashhistory:'cashreview',rota:'rota',requests:'rota',timesheets:'timesheets',staff:'staff',file:'staff',absence:'absence',docs:'docs',training:'training',conduct:'conduct',money:'money',access:'admin'};
 function canView(v){ return !!VIEWS[v] && (!VIEW_MOD[v] || hasMod(VIEW_MOD[v])); }
 function stateChip(st, dueSoon){
 if (st==='Signed') return dueSoon ? '<span class="chip amb">Re-sign soon</span>' : '<span class="chip grn">Signed</span>';
@@ -505,7 +506,7 @@ return demoStrip() +
 '<div class="who"><div class="nm">'+esc(S.me.firstName+' '+S.me.lastName)+'<br><span style="opacity:.6">'+esc(S.me.jobRole)+' · '+esc(S.me.access)+'</span></div>'+
 '<button class="av" data-go="me" title="My details" aria-label="My details">'+initials(S.me.firstName+' '+S.me.lastName)+'</button>'+
 '<button class="logout" id="signout" aria-label="Log out">'+ICON.logout+'<span>Log out</span></button></div></div>'+sub+'</header>'+
-'<main id="main"></main><nav class="btabs" aria-label="Main">'+tabBtns+'</nav>';
+'<main id="main"></main><nav class="btabs'+(groups.length>5?' many':'')+'" aria-label="Main">'+tabBtns+'</nav>';
 }
 function goGroup(id){
 var g = navGroups().filter(function(x){ return x.id===id; })[0]; if(!g) return;
@@ -2049,7 +2050,7 @@ add('rota','Rota','rota'); if(hasMod('timesheets')&&!hasMod('rota')) t.push(['ti
 if(hasMod('staff')) t.push(['staff','Staff']); else if(hasMod('absence')) t.push(['absence','Absence']);
 add('contracts','Contracts','contracts');
 add('docs','Documents','docs'); if(hasMod('mgrdocs')&&!hasMod('docs')) t.push(['mgrdocs','Manager files']); if(hasMod('training')) t.push(['training','Training']); else if(hasMod('conduct')) t.push(['conduct','Conduct']);
-add('moneyreport','Takings reports','cashreview'); add('money','Money','money'); if(hasMod('admin')) t.push(['access','Access']);
+add('moneyreport','Takings reports','cashreview'); add('money','Money','money'); add('marketing','Marketing','marketing'); if(hasMod('admin')) t.push(['access','Access']);
 if(isMgr()) t.push(['home','My portal'],['myrota','My rota and holiday'],['me','My details']); else t=t.concat([['myrota','My rota and holiday'],['mydocs','My documents'],['mytraining','My training'],['me','My details']]);
 return t;
 }
@@ -2057,6 +2058,7 @@ var NAV_GROUPS=[
 ['g_ops','Operations',['tasks','checks','incidents','garage']],
 ['g_money','Money',['cashup','vouchers','moneyreport','money']],
 ['g_mgmt','Management',['rota','timesheets','staff','absence','contracts','docs','mgrdocs','training','conduct','access']],
+['g_mkt','Marketing',['marketing']],
 ['g_me','Me',['home','myrota','mydocs','mytraining','me']]
 ];
 var NAV_PARENT={file:'staff',absence:'staff',timesheets:'rota',conduct:'training',mgrdocs:'docs',requests:'rota',checkadmin:'checks',checkhistory:'checks',cashhistory:'cashup'};
@@ -2974,6 +2976,49 @@ var lines=[['Code','Status','Product','Alpha activity','Value','Quantity','Holde
 d.list.forEach(function(v){ lines.push([v.code,v.status,v.product,v.alphaProduct,v.value,v.qty,v.holder,v.email,v.phone,v.purchaser,v.purchasedOn,v.expires,v.redeemedAt?v.redeemedAt.slice(0,10):'',v.redeemedBy,v.redeemedRef,v.redeemedProduct,v.notes].map(q).join(',')); });
 var blob=new Blob([lines.join('\r\n')],{type:'text/csv'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=d.company.replace(/\s+/g,'-')+'-vouchers-'+toYmd(new Date())+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+VIEWS.marketing = function(){
+var m=$('#main'); busy(m);
+call('marketingToken',{}).then(function(r){
+if (!r.ready) {
+m.innerHTML='<div class="head"><div><div class="eyebrow">On Track Marketing</div><h1>Marketing</h1><p>'+(r.admin?'The marketing hub is not connected yet. Add the hub address and the shared secret from On Track Marketing to switch it on.':'The marketing hub is being set up. Check back soon.')+'</p></div>'+
+(r.admin?'<div class="acts"><button class="btn pri" id="mk_set">Set up the hub</button></div>':'')+'</div>'+
+(r.admin?'<div class="panel pad"><p style="margin:0"><b>Address:</b> '+(r.hasUrl?'added':'not added yet')+'<br><b>Shared secret:</b> '+(r.hasSecret?'added':'not added yet')+'</p></div>':'');
+if ($('#mk_set')) $('#mk_set').onclick=marketingSetup;
+return;
+}
+S.mktOrigin=r.origin;
+m.innerHTML='<div class="mk-wrap"><div class="mk-bar"><span class="eyebrow" style="margin:0">On Track Marketing</span><span style="margin-left:auto;display:flex;gap:8px">'+
+'<button class="btn sm" id="mk_reload">Reload</button>'+(r.admin?'<button class="btn sm" id="mk_set">Hub settings</button>':'')+'</span></div>'+
+'<iframe id="mk_frame" title="Marketing hub" src="'+esc(r.url)+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads" allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+$('#mk_reload').onclick=function(){ VIEWS.marketing(); };
+if ($('#mk_set')) $('#mk_set').onclick=marketingSetup;
+}).catch(function(e){ m.innerHTML=errBox(e); });
+};
+window.addEventListener('message', function(e){
+var f=document.getElementById('mk_frame'); if (!f || !S.mktOrigin) return;
+if (e.origin!==S.mktOrigin || e.source!==f.contentWindow) return;
+var d=e.data, h=typeof d==='number'?d:(d && typeof d==='object' && (d.type===undefined || d.type==='tk-hub-height'))?Number(d.height):NaN;
+if (!isFinite(h)) return;
+f.style.height=Math.max(300, Math.min(20000, Math.round(h)))+'px';
+});
+function marketingSetup(){
+var sh=sheetOpen('<div class="sheet-in" role="dialog" style="max-width:560px"><div class="sheet-h"><div><div class="eyebrow">Marketing</div><h2>Hub settings</h2></div><button class="btn sm" id="x" style="margin-left:auto">Close</button></div>'+
+'<div class="sheet-b pad form" id="mkf"><p class="hint wide" style="margin:0">Loading...</p></div><div class="sheet-f"><button class="btn pri" id="mk_go" disabled>Save</button></div></div>'), el=sh.el;
+call('marketingSettings',{}).then(function(s){
+$('#mkf',el).innerHTML='<label class="f wide">Hub address<input class="inp" id="mk_url" value="'+esc(s.url)+'" placeholder="https://hub.ontrackmarketing.uk/tk-marketing/?t="><span class="hint">The token is added on the end. It lasts '+Math.round(s.ttl/60)+' minutes.</span></label>'+
+'<label class="f wide">Shared secret<input class="inp" id="mk_sec" type="password" autocomplete="new-password" placeholder="'+(s.hasSecret?'Saved. Leave blank to keep it':'Paste the secret from On Track Marketing')+'"><span class="hint">'+(s.hasSecret?'Added '+fmt(s.secretSetAt)+'. It is stored on the server and never shown again.':'Stored on the server only. Nobody can view it once saved.')+'</span></label>'+
+(s.hasSecret?'<label class="f wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="mk_clr"> Remove the saved secret (switches the hub off)</label>':'')+'<div class="wide" id="mkmsg"></div>';
+$('#mk_go',el).disabled=false;
+}).catch(function(e){ $('#mkf',el).innerHTML=errBox(e); });
+$('#mk_go',el).onclick=function(){ var b=this; b.disabled=true;
+call('marketingSettings',{save:true, url:$('#mk_url',el).value, secret:$('#mk_sec',el).value, clearSecret:!!($('#mk_clr',el)&&$('#mk_clr',el).checked)})
+.then(function(){ sh.close(); toast('Saved'); VIEWS.marketing(); }).catch(function(e){ $('#mkmsg',el).innerHTML=errBox(e); b.disabled=false; }); };
+}
+(function(){ var s=document.createElement('style'); s.textContent=
+'.mk-wrap{display:flex;flex-direction:column;gap:8px}.mk-bar{display:flex;align-items:center;gap:8px}'+
+'#mk_frame{width:100%;height:calc(100vh - 190px);min-height:600px;border:1px solid var(--line);border-radius:var(--r);background:#fff;display:block}'+
+'@media (max-width:760px){#mk_frame{height:calc(100vh - 230px);min-height:480px;border-radius:10px}}';
+document.head.appendChild(s); })();
 function reader(code, after, offline){
 var el=document.createElement('div'); el.className='sheet';
 var who = offline?offline.name:(S.me.firstName+' '+S.me.lastName);
